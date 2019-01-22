@@ -28,9 +28,9 @@ include(${CMAKE_SOURCE_DIR}/cmake/CommonInputChecks.cmake)
 set(UTILITY_INCLUDE ${CMAKE_SOURCE_DIR}/include)
 set(UTILITY_INCLUDE_SUB ${UTILITY_INCLUDE}/utility)
 set(UTILITY_SRC ${CMAKE_SOURCE_DIR}/source)
-file(GLOB_RECURSE UTILITY_HEADER_LIST "${UTILITY_INCLUDE}/*.h")
-file(GLOB_RECURSE UTILITY_SOURCE_LIST "${UTILITY_SRC}/*.h" "${UTILITY_SRC}/*.cpp")
-
+file (GLOB_RECURSE UTILITY_HEADER_LIST "${UTILITY_INCLUDE}/*.h")
+file (GLOB_RECURSE UTILITY_SOURCE_LIST "${UTILITY_SRC}/*.h" "${UTILITY_SRC}/*.cpp")
+    
 # Create target
 add_library(utility STATIC)
 # Add the header includes and headers to the library
@@ -40,7 +40,7 @@ target_include_directories(utility PUBLIC
 # Add headers in the include folder as PUBLIC so downstream
 # targets have access to them
 target_sources(utility PUBLIC ${UTILITY_HEADER_LIST})
-# Add headers and sources in the src folder as PRIVATE as they
+# Add headers and sources in the source folder as PRIVATE as they
 # will not be needed downstream
 target_sources(utility PRIVATE ${UTILITY_SOURCE_LIST})
 # Add an alias so that a library can be used inside the build tree, eg when testing
@@ -48,6 +48,11 @@ add_library(Utility::Utility ALIAS utility)
 # Add C++ 14 flag
 target_compile_features(utility PUBLIC cxx_std_14)
 # Link dependencies
+
+# Group source files
+include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)
+assign_source_group("utility" ${UTILITY_HEADER_LIST})
+assign_source_group("utility" ${UTILITY_SOURCE_LIST})
 
 
 #################################
