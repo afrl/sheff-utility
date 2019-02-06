@@ -25,6 +25,9 @@ namespace utility
 		/// must support a move assignment operator (otherwise a copy will be made).
 		template<typename TContainer>
 		DynamicArray(TContainer&& objects);
+		/// /see DynamicArray(TContainer&& objects)
+		template<typename TContainer>
+		DynamicArray(const TContainer& objects);
 		/// A constructor that takes an initializer list, use like:
 		/// DynamicArray<int> int_array({ 1, 2 });
 		/// DynamicArray<int*> int_p_array({ &int_1, &int_2 });
@@ -33,7 +36,7 @@ namespace utility
 		/// Note: if T = std::unique_ptr<...>, this method will cause a deleted function
 		/// error since the unique_ptr will be const and not movable.
 		/// Convert the initializer list to an array to use the constructor above.
-		DynamicArray(std::initializer_list<T>&& objects);
+		DynamicArray(std::initializer_list<T> objects);
 		DynamicArray(const DynamicArray& arg);
 		DynamicArray(DynamicArray&& arg) noexcept;
 		virtual ~DynamicArray();
@@ -119,7 +122,16 @@ namespace utility
 	}
 
 	template<typename T, typename SizeType>
-	inline DynamicArray<T, SizeType>::DynamicArray(std::initializer_list<T>&& objects)
+	template<typename TContainer>
+	inline DynamicArray<T, SizeType>::DynamicArray(const TContainer & objects)
+		: objects_(new T[objects.size()]), size_(static_cast<SizeType>(objects.size()))
+	{
+		assert(objects.size() > 0);
+		std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(objects_, size_));
+	}
+
+	template<typename T, typename SizeType>
+	inline DynamicArray<T, SizeType>::DynamicArray(std::initializer_list<T> objects)
 		: objects_(new T[objects.size()]), size_(static_cast<SizeType>(objects.size()))
 	{
 		assert(objects.size() > 0);
@@ -135,7 +147,7 @@ namespace utility
 	}
 
 	template<typename T, typename SizeType>
-	inline DynamicArray<T, SizeType>::DynamicArray(DynamicArray && arg)
+	inline DynamicArray<T, SizeType>::DynamicArray(DynamicArray && arg) noexcept
 	{
 		std::swap(objects_, arg.objects_);
 		auto tmp_size = size_;
