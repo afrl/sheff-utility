@@ -49,7 +49,8 @@ add_library(Utility::Utility ALIAS utility)
 target_compile_features(utility PUBLIC cxx_std_14)
 # Link dependencies
 
-# Group source files
+
+# Assign source groups
 include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)
 assign_source_group("utility" ${UTILITY_HEADER_LIST})
 assign_source_group("utility" ${UTILITY_SOURCE_LIST})

@@ -13,7 +13,7 @@ endif()
 #   will have different paths.  CMake does not provide a clean way to group source files
 #   for interface targets as of CMake 3.12.0 that will propogate downstream.  For now,
 #   each target the links against this interface library requires the source groups to be set.
-function(assign_source_group_utility)
+function(assign_source_group_Utility)
 	set(_source_files "@UTILITY_HEADER_LIST@")
 	set(_include_match_name "utility")
     foreach(_source IN ITEMS ${_source_files})
@@ -30,4 +30,4 @@ function(assign_source_group_utility)
 			source_group("${_source_group_msvc}" FILES "${_source}")
 		endif()
     endforeach()
-endfunction(assign_source_group_utility)
+endfunction(assign_source_group_Utility)
