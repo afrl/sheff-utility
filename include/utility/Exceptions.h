@@ -12,13 +12,13 @@
 #ifdef DISABLE_ASSERTIONS
 #define _UTIL_ASSERT(x, m)
 #else
-#define _UTIL_ASSERT(x, m) if (x) { _UTIL_MSG_EXCEPT(m); }
+#define _UTIL_ASSERT(x, m) if (!(x)) { throw _UTIL_MSG_EXCEPT(m); }
 #endif
 // Assertion for class methods
 #ifdef DISABLE_ASSERTIONS
 #define _UTIL_ASSERT_C(x, m)
 #else
-#define _UTIL_ASSERT_C(x, m) if (x) { _UTIL_MSG_EXCEPT_C(m); }
+#define _UTIL_ASSERT_C(x, m) if (!(x)) { throw _UTIL_MSG_EXCEPT_C(m); }
 #endif
 
 namespace utility

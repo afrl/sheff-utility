@@ -222,8 +222,8 @@ namespace utility
 	inline DynamicMatrix<T, RowSizeType, ColSizeType> & DynamicMatrix<T, RowSizeType, ColSizeType>::operator=(const DynamicMatrix & arg)
 	{
 		assert(i >= 0 && i < row_size_);
-		assert(col_size_ == objects.size());
-		auto obj_iter = objects.begin();
+		assert(col_size_ == arg.objects.size());
+		auto obj_iter = arg.objects.begin();
 		for (auto j = 0; j < col_size_; j++, obj_iter++)
 		{
 			(*this)(i, j) = std::move(*obj_iter);
