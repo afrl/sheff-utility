@@ -218,6 +218,7 @@ namespace utility
 		return *this;
 	}
 
+        /*
 	template<typename T, typename RowSizeType, typename ColSizeType>
 	inline DynamicMatrix<T, RowSizeType, ColSizeType> & DynamicMatrix<T, RowSizeType, ColSizeType>::operator=(const DynamicMatrix & arg)
 	{
@@ -230,6 +231,7 @@ namespace utility
 		}
 		return *this;
 	}
+        */
 
 	template<typename T, typename RowSizeType, typename ColSizeType>
 	inline void DynamicMatrix<T, RowSizeType, ColSizeType>::clear()
