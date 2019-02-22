@@ -7,6 +7,8 @@ project(UTILITY VERSION 1.0.0 LANGUAGES CXX)
 option(UTILITY_BuildDev "Build the project in the dev folder. (intended for debugging this project by devs)" OFF)
 option(UTILITY_BuildTests "Build the unit tests." OFF)
 
+message(STATUS "Configuring for ${CMAKE_GENERATOR}:\n   Mode: ${CMAKE_BUILD_TYPE},  Dev: ${UTILITY_BuildDev},  Test: ${UTILITY_BuildTests}\n")
+
 ##################
 # Checking input #
 ##################
@@ -128,3 +130,4 @@ export(
 
 # Register package in user's package registry
 export(PACKAGE Utility)
+
