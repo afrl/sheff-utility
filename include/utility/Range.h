@@ -47,7 +47,7 @@ namespace utility
 			}
 
 			bool operator !=(range_iter_base const& other) const {
-				return not (*this == other);
+				return ! (*this == other);
 			}
 
 		protected:
