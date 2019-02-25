@@ -49,6 +49,8 @@ target_sources(utility PRIVATE ${UTILITY_SOURCE_LIST})
 add_library(Utility::Utility ALIAS utility)
 # Add C++ 14 flag
 target_compile_features(utility PUBLIC cxx_std_14)
+# Add flag to link with experimental/filesystem if GNU
+target_link_libraries(utility libstdc++fs.a)
 # Link dependencies
 
 

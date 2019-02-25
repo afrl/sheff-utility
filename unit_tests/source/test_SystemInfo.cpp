@@ -8,6 +8,8 @@ using namespace std;
 int main()
 {
 
+  cout << "Test: SystemInfo" << endl << endl; 
+
   utility::SystemInfo sys;
   
   cout << utility::SystemInfo::OS << endl; 
