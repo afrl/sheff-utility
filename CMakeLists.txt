@@ -50,7 +50,9 @@ add_library(Utility::Utility ALIAS utility)
 # Add C++ 14 flag
 target_compile_features(utility PUBLIC cxx_std_14)
 # Add flag to link with experimental/filesystem if GNU
-target_link_libraries(utility libstdc++fs.a)
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    target_link_libraries(utility libstdc++fs.a)
+endif()
 # Link dependencies
 
 
