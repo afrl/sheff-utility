@@ -21,10 +21,10 @@ namespace utility
 
 #if   defined(__INTEL_COMPILER)
   const std::string SystemInfo::compiler = "Intel";
-  const std::string SystemInfo::compiler_version = __INTEL_COMPILER;
+  const std::string SystemInfo::compiler_version = STRINGIFY_MACRO(__INTEL_COMPILER);
 #elif defined(__MSC_VER)
   const std::string SystemInfo::compiler = "MSVC";
-  const std::string SystemInfo::compiler_version = __MSC_VER;
+  const std::string SystemInfo::compiler_version = STRINGIFY_MACRO(__MSC_VER);
 #elif defined(__clang__) 
   const std::string SystemInfo::compiler = "Clang";
   const std::string SystemInfo::compiler_version = STRINGIFY_MACRO(__clang_major__.__clang_minor__.__clang_patchlevel__);
