@@ -122,7 +122,7 @@ def process_args():
       if a in ("OFF", "0"):
         user_opts.use_mpi="OFF"
     if o in ("--make-tests"):
-      if a in ("OFF", "1"):
+      if a in ("OFF", "0"):
         user_opts.make_tests="OFF"
     if o in ("--make-dev"):
       if a in ("OFF", "0"):
