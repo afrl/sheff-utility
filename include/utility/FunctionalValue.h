@@ -11,9 +11,9 @@ namespace utility
     class FunctionalValue
     {
     public:
-        double value()
+        double value() const
         {
-            static_cast<T *>(this)->value_impl();
+            return static_cast<const T *>(this)->value_impl();
         }
     };
 
@@ -28,7 +28,7 @@ namespace utility
     public:
         StaticValue(const double value) : value_(value) {}
 
-        double value_impl()
+        double value_impl() const
         {
             return value_;
         }
