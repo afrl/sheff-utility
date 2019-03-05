@@ -27,7 +27,7 @@ namespace utility
 		/// Sorts the container's items based on value and returns
 		/// a const reference to the sorted vector.
 		const std::vector<T>& get_sorted();
-		auto begin() { return v.begin(); }
+		auto begin() const { return v.begin(); }
 		auto end() const { return v.end(); }
 
 
