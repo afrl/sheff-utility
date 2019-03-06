@@ -1,8 +1,12 @@
 /// Unit test for Filesystem.h
 
 #include<iostream>
+
+#ifdef HAVE_FILESYSTEM
+#include<experimental/filesystem>
+#else
 #include "utility/Filesystem.h"
-//#include<experimental/filesystem>
+#endif
 
 using namespace std; 
 namespace fs = std::experimental::filesystem;
