@@ -6,8 +6,9 @@ project(UTILITY VERSION 1.0.0 LANGUAGES CXX)
 # Options
 option(UTILITY_BuildDev "Build the project in the dev folder. (intended for debugging this project by devs)" OFF)
 option(UTILITY_BuildTests "Build the unit tests." OFF)
+option(UTILITY_HaveFilesystem "Use if compiler has included <experimental/filesystem>" ON) 
 
-message(STATUS "Configuring for ${CMAKE_GENERATOR}:\n   Mode: ${CMAKE_BUILD_TYPE},  Dev: ${UTILITY_BuildDev},  Test: ${UTILITY_BuildTests}\n")
+message(STATUS "Configuring for ${CMAKE_GENERATOR}:\n   Mode: ${CMAKE_BUILD_TYPE}, Dev: ${UTILITY_BuildDev}, Test: ${UTILITY_BuildTests}, FS: ${UTILITY_HaveFilesystem}\n")
 
 ##################
 # Checking input #
@@ -49,9 +50,15 @@ target_sources(utility PRIVATE ${UTILITY_SOURCE_LIST})
 add_library(Utility::Utility ALIAS utility)
 # Add C++ 14 flag
 target_compile_features(utility PUBLIC cxx_std_14)
-# Add flag to link with experimental/filesystem if GNU. This requires GCC >= 6.
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-    target_link_libraries(utility libstdc++fs.a)
+# Use filesystem if available
+if (UTILITY_HaveFilesystem)
+  add_definitions(-DHAVE_FILESYSTEM)
+  # Add flag to link with experimental/filesystem if GNU. This requires GCC >= 5.3.
+  if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
+      target_link_libraries(utility libstdc++fs.a)
+  endif()
+else()
+  remove_definitions(-DHAVE_FILESYSTEM)
 endif()
 # Link dependencies
 
