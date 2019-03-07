@@ -8,7 +8,7 @@
 
 namespace utility
 {
-	template<typename T>
+	template<typename T, typename ColSizeType>
 	class DynamicMatrixRow
 	{
 	public:
@@ -18,6 +18,8 @@ namespace utility
 
 		T * const begin() const { return begin_; }
 		T * const end() const { return end_; }
+        const ColSizeType size() const { return static_cast<ColSizeType>(end_ - begin_); }
+        T & operator[](const ColSizeType i) const { return *(begin_ + i); }
 
 	private:
 		T* begin_;
@@ -58,7 +60,7 @@ namespace utility
 		T & operator () (const RowSizeType i, const ColSizeType j);
 		/// Returns a very simple wrapper that provides the begin and end iterator for a row.
 		/// Note: this would need to return a smarter iterator if get_col is to be implemented.
-		const DynamicMatrixRow<T> get_row(const RowSizeType i);
+		const DynamicMatrixRow<T, ColSizeType> get_row(const RowSizeType i);
 		/// Assign operator that takes an iterable lvalue container.
 		/// Note: a copy is made for each object in objects.
 		/// Note: if T = std::unique_ptr<...>, this method will cause a deleted function
@@ -159,10 +161,27 @@ namespace utility
 	template<typename T, typename RowSizeType, typename ColSizeType>
 	inline void DynamicMatrix<T, RowSizeType, ColSizeType>::resize(const RowSizeType num_rows, const ColSizeType num_cols)
 	{
-		if (objects_ != nullptr)
-			delete[] objects_;
-
-		objects_ = new T[num_rows * num_cols]();
+        if (objects_ != nullptr)
+        {
+            // If the new size is larger, then do a conservative resize and move the memory over to the new one
+            if ((num_rows * num_cols) > (row_size_ * col_size_))
+            {
+                T * tmp = objects_;
+                objects_ = new T[num_rows * num_cols]();
+                std::move(&tmp[0], &tmp[row_size_ * col_size_], stdext::checked_array_iterator<T*>(objects_, row_size_ * col_size_));
+                delete[] tmp;
+            }
+            // If the new size is smaller, then throw away the old data
+            else
+            {
+                delete[] objects_;
+                objects_ = new T[num_rows * num_cols]();
+            }
+        }
+        else
+        {
+            objects_ = new T[num_rows * num_cols]();
+        }
 		row_size_ = num_rows;
 		col_size_ = num_cols;
 	}
@@ -184,10 +203,10 @@ namespace utility
 	}
 
 	template<typename T, typename RowSizeType, typename ColSizeType>
-	inline const DynamicMatrixRow<T> DynamicMatrix<T, RowSizeType, ColSizeType>::get_row(const RowSizeType i)
+	inline const DynamicMatrixRow<T, ColSizeType> DynamicMatrix<T, RowSizeType, ColSizeType>::get_row(const RowSizeType i)
 	{
 		assert(i >= 0 && i < row_size_);
-		return DynamicMatrixRow<T>(&objects_[col_size_ * i], &objects_[col_size_ * i + col_size_]);
+		return DynamicMatrixRow<T, ColSizeType>(&objects_[col_size_ * i], &objects_[col_size_ * i + col_size_]);
 	}
 
 

@@ -1,39 +1,47 @@
 #pragma once
 
+#include "expressions/exprtk.hpp"
+
+#include <functional>
+
 namespace utility
 {
-
-    // Note: this follows the CRTP idiom and static polymorphism
-    // See https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
-
-    /// Provides the interface of a functional value.
-    template<typename T>
-    class FunctionalValue
+    /// \brief A wrapper for a value that is given by a lambda function.
+    ///
+    /// This class is intended to be used for material properties and/or boundary condition
+    /// values, allowing these parameters to become functions (especially time).  This class
+    /// is suitable for values dependent on non-local 
+    class TemporalValue
     {
     public:
+        using Function = std::function<double()>;
+
+        void set_function(const Function func)
+        {
+            func_ = func;
+        }
+
         double value() const
         {
-            return static_cast<const T *>(this)->value_impl();
-        }
-    };
-
-    template<typename T>
-    double get_value(const FunctionalValue<T>& f_value)
-    {
-        return f_value.value();
-    }
-
-    class StaticValue : public FunctionalValue<StaticValue>
-    {
-    public:
-        StaticValue(const double value) : value_(value) {}
-
-        double value_impl() const
-        {
-            return value_;
+            return func_();
         }
 
     private:
-        double value_;
+        Function func_;
+    };
+
+    /// Provides the interface of a functional value.
+    class SpatialTemporalValue
+    {
+    public:
+        using Function = std::function<double(double x, double y, double z)>;
+
+        double value(double x, double y, double z) const
+        {
+            return func_(x, y, z);
+        }
+
+    private:
+        Function func_;
     };
 }

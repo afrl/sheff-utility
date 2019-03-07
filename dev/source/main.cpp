@@ -1,12 +1,12 @@
 #include "utility/Exceptions.h"
-#include "utility/FunctionalValue.h"
+
+#include <iostream>
 
 using namespace utility;
 
 int main()
 {
-    StaticValue a(1.0);
-    get_value(a);
+    
 
 	return 0;
 }
