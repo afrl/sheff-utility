@@ -112,7 +112,9 @@ class options:
   def print(self):
     """ Load CMake config options """
     print("\nConfig Options:")
-    print(sorted(self.config))
+    for key in sorted(self.config):
+      print("  ", '{:<15}'.format(key), self.config[key])
+    print("")
 
 
 
