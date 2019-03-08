@@ -8,7 +8,9 @@ option(UTILITY_BuildDev "Build the project in the dev folder. (intended for debu
 option(UTILITY_BuildTests "Build the unit tests." OFF)
 option(UTILITY_HaveFilesystem "Use if compiler has included <experimental/filesystem>" ON) 
 
-message(STATUS "Configuring for ${CMAKE_GENERATOR}:\n   Mode: ${CMAKE_BUILD_TYPE}, Dev: ${UTILITY_BuildDev}, Test: ${UTILITY_BuildTests}, FS: ${UTILITY_HaveFilesystem}\n")
+# For debugging, print generator, compiler, and options
+message(STATUS "Gen: ${CMAKE_GENERATOR}, CXX: ${CMAKE_CXX_COMPILER_ID}, Mode: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Dev: ${UTILITY_BuildDev}, Tests: ${UTILITY_BuildTests}, FS: ${UTILITY_HaveFilesystem}")
 
 ##################
 # Checking input #
