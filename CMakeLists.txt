@@ -62,6 +62,11 @@ else()
 endif()
 # Link dependencies
 
+# Modify the properties for one source in particular due to the source file requiring too
+# larger of an object on MSVC
+if (MSVC)
+    set_source_files_properties(${UTILITY_SRC}/SpatialTemporalValue.cpp PROPERTIES COMPILE_FLAGS /bigobj)
+endif()
 
 # Assign source groups
 include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)

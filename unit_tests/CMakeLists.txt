@@ -19,7 +19,7 @@ foreach(_test ${_unit_tests})
   get_filename_component(_category ${_dir} NAME)
 
   # Create executable
-  STRING(REPLACE ".cpp" "" _name UTILITY_TEST_${_name}) 
+  STRING(REPLACE ".cpp" "" _name utility_${_name}) 
   add_executable(${_name} ${_test})
   set_property(TARGET ${_name} PROPERTY FOLDER unit_tests)
   target_link_libraries(${_name} PRIVATE Utility::Utility)
