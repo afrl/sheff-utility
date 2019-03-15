@@ -3,14 +3,7 @@
 #include <functional>
 #include <memory>
 
-/// Forward declare exprtk types so the massive header does not have to appear in this header.
-namespace exprtk
-{
-    template<typename T>
-    class expression;
-    template<typename T>
-    class symbol_table;
-}
+#include "second_party_math/ExprtkWrappers.h"
 
 namespace utility
 {
@@ -45,8 +38,7 @@ namespace utility
         const std::string& get_function() const;
 
     private:
-        std::unique_ptr<exprtk::expression<double>> expression_;
-        std::unique_ptr<exprtk::symbol_table<double>> symbol_table_;
+        second_party_math::ExprtkExpression expression_;
         std::string function_string_;
         double x_cached_;
         double y_cached_;
