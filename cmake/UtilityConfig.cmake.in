@@ -1,4 +1,5 @@
 # Make sure we have public dependencies available
+find_package(SecondPartyMath CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../second_party_math/build" "${CMAKE_SOURCE_DIR}/../second_party_math/install_dir")
 
 
 if(NOT TARGET Utility::Utility)

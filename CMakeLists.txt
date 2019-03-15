@@ -23,6 +23,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/CommonInputChecks.cmake)
 ########################
 
 
+find_package(SecondPartyMath CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../second_party_math/build" "${CMAKE_SOURCE_DIR}/../second_party_math/install_dir")
 
 
 ################################
@@ -63,17 +64,13 @@ else()
   remove_definitions(-DHAVE_FILESYSTEM)
 endif()
 # Link dependencies
-
-# Modify the properties for one source in particular due to the source file requiring too
-# larger of an object on MSVC
-if (MSVC)
-    set_source_files_properties(${UTILITY_SRC}/SpatialTemporalValue.cpp PROPERTIES COMPILE_FLAGS /bigobj)
-endif()
+target_link_libraries(utility PUBLIC SecondPartyMath::SecondPartyMath)
 
 # Assign source groups
 include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)
 assign_source_group("utility" ${UTILITY_HEADER_LIST})
 assign_source_group("utility" ${UTILITY_SOURCE_LIST})
+assign_source_group_SecondPartyMath()
 
 
 #################################
@@ -148,4 +145,3 @@ export(
 
 # Register package in user's package registry
 export(PACKAGE Utility)
-
