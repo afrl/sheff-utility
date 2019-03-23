@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <string>
 #include <exception>
 #include <typeinfo>
@@ -20,9 +21,16 @@
 #else
 #define _UTIL_ASSERT_C(x, m) if (!(x)) { throw _UTIL_MSG_EXCEPT_C(m); }
 #endif
+#define _UTIL_WARN(m) std::cerr << utility::build_warning_msg(__FILE__, "", __func__, __LINE__, m) << std::endl;
+#define _UTIL_WARN_C(m) std::cerr << utility::build_warning_msg(__FILE__, typeid(*this).name(), __func__, __LINE__, m) << std::endl;
 
 namespace utility
 {
+    static std::string build_warning_msg(const std::string file, const std::string cls, const std::string func, const int line, const std::string msg = "")
+    {
+        return "Warning " + msg + "\n\t\tOcurred in:\n\t\t" + file + ":" + std::to_string(line) + " in\n\t\t" + ((cls == "") ? " function " + func : func + " method of " + cls);
+    }
+
 	/// \brief A simple exception class to throw inside Beta.
 	/// Use the macro's defined above in this header file.  The uses are as follows:
 	/// - _UTIL_MSG_EXCEPT(string message) should be used in functions

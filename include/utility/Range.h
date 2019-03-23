@@ -186,6 +186,11 @@ namespace utility
 		return { begin, end };
 	}
 
+    template <typename T>
+    range_proxy<T> range_from_zero(T end) {
+        return { 0, end };
+    }
+
 	template <typename T>
 	infinite_range_proxy<T> range(T begin) {
 		return { begin };

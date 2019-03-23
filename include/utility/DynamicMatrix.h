@@ -15,6 +15,12 @@ namespace utility
 		DynamicMatrixRow(T* begin_a, T* end_a)
 			: begin_(begin_a), end_(end_a)
 		{}
+        DynamicMatrixRow(const DynamicMatrixRow<T, ColSizeType> & other)
+            : begin_(other.begin_), end_(other.end_)
+        {}
+        DynamicMatrixRow(DynamicMatrixRow<T, ColSizeType> && other) noexcept
+            : begin_(other.begin_), end_(other.end_)
+        {}
 
 		T * const begin() const { return begin_; }
 		T * const end() const { return end_; }

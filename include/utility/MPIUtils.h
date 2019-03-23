@@ -76,6 +76,9 @@ namespace utility
 		template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
 		static std::vector<T> gather_vectors(const std::vector<T>& data_from_this_proc, const bool use_local_comm = true);
 
+        template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
+        static T sum_across_ranks(const T & value, const bool use_local_comm = true);
+
 		/// Sends data from root of one group to the root of another group.  This allows
 		/// two programs to communicate with each other using this interface.
 		/// Note: does a blocking send
@@ -296,6 +299,16 @@ namespace utility
 	#endif
 	}
 
+    template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
+    inline T MPIUtils::sum_across_ranks(const T & value, const bool use_local_comm)
+    {
+    #ifdef HAVE_MPI
+        // TODO implement
+    #else
+        return value;
+    #endif
+    }
+
 	template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
 	inline void MPIUtils::send_to_group(const std::vector<T> data, int target_group_key)
 	{
@@ -345,7 +358,7 @@ namespace utility
 		MPI_Comm_size(state.local_comm, &comm_size);
 		return comm_size;
 	#else
-		return 0;
+		return 1;
 	#endif
 	}
 
