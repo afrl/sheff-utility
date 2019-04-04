@@ -1,4 +1,7 @@
+#pragma once
+
 #include <string>
+#include <vector>
 
 namespace utility
 {
@@ -15,4 +18,9 @@ namespace utility
 	/// Converts a string that could be x, y, z, 0, 1, or 2
 	/// to the 0-2 index for a coordinate axis
 	unsigned int str_to_axis(const std::string &s);
+    /// Tokenizes a string based on whitespace.  For example, " foo   bar " becomes { "foo", "bar" }
+    std::vector<std::string> tokenize(const std::string & s);
+    /// Erases all occurences of substr from s
+    void remove_substring(std::string & s, const std::string & substr);
+
 }
