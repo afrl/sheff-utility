@@ -58,7 +58,7 @@ if (UTILITY_HaveFilesystem)
   add_definitions(-DHAVE_FILESYSTEM)
   # Add flag to link with experimental/filesystem if GNU. This requires GCC >= 5.3.
   if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
-      target_link_libraries(utility libstdc++fs.a)
+      target_link_libraries(utility PUBLIC libstdc++fs.a)
   endif()
 else()
   remove_definitions(-DHAVE_FILESYSTEM)
