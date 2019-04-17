@@ -276,7 +276,10 @@ namespace utility
 	template<typename T, typename SizeType>
 	inline void DynamicArray<T, SizeType>::clear()
 	{
-		delete[] objects_;
+        if (objects_ != nullptr)
+        {
+            delete[] objects_;
+        }
 		size_ = 0;
 	}
 
