@@ -147,12 +147,12 @@ namespace utility
 	}
 
 	template<typename T, typename SizeType>
-	inline DynamicArray<T, SizeType>::DynamicArray(DynamicArray && arg) noexcept
+    inline DynamicArray<T, SizeType>::DynamicArray(DynamicArray && arg) noexcept
 	{
-		std::swap(objects_, arg.objects_);
-		auto tmp_size = size_;
+        objects_ = arg.objects_;
 		size_ = arg.size_;
-		arg.size_ = tmp_size;
+        arg.objects_ = nullptr;
+		arg.size_ = 0;
 	}
 
 	template<typename T, typename SizeType>
