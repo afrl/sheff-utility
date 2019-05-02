@@ -48,6 +48,9 @@ namespace utility
 		DynamicMatrix(DynamicMatrix&& arg) noexcept;
 		virtual ~DynamicMatrix();
 
+        /// Swaps the current object with another (swapping the underlying pointers)
+        void swap(DynamicMatrix& arg);
+
 		/// Returns the beginning of the connectivity with type of
 		/// const pointer to const pointers of objects.  Only the objects are multable.
 		T * const begin() const;
@@ -139,6 +142,20 @@ namespace utility
 	{
 		clear();
 	}
+
+    template<typename T, typename RowSizeType, typename ColSizeType>
+    inline void DynamicMatrix<T, RowSizeType, ColSizeType>::swap(DynamicMatrix & arg)
+    {
+        auto old_objects = objects_;
+        auto old_row_size = row_size_;
+        auto old_col_size = col_size_;
+        objects_ = arg.objects_;
+        row_size_ = arg.row_size_;
+        col_size_ = arg.col_size_;
+        arg.objects_ = old_objects;
+        arg.row_size_ = old_row_size;
+        arg.col_size_ = old_col_size;
+    }
 
 	template<typename T, typename RowSizeType, typename ColSizeType>
 	inline T * const DynamicMatrix<T, RowSizeType, ColSizeType>::begin() const
