@@ -7,4 +7,4 @@ specialized_opts = [
         modules_and_var_map={ 'fea_io': 'FEAIO_HaveFilesystem', 'utility': 'UTILITY_HaveFilesystem' }
 ]
 
-make_helper.make(specialized_opts, build_order=dependencies.get_build_order())
+make_helper.make(specialized_opts)
