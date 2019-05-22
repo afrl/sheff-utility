@@ -25,7 +25,7 @@ namespace utility
         template <typename T, typename U>
         std::size_t operator()(const std::pair<T, U>& x) const
         {
-            return utility::hash<T, U>(x.first, x.second);
+            return utility::hash( x.first, x.second );
         }
 
         template <typename T, typename U>
