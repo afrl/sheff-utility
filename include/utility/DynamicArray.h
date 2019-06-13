@@ -110,40 +110,68 @@ namespace utility
 	template<typename T, typename SizeType>
 	template<typename TContainer>
 	inline DynamicArray<T, SizeType>::DynamicArray(TContainer && objects)
-		: objects_(new T[objects.size()]), size_(static_cast<SizeType>(objects.size()))
 	{
-		assert(objects.size() > 0);
-		SizeType pos = 0;
-		for (T& obj : objects)
-		{
-			objects_[pos] = std::move(obj);
-			pos++;
-		}
+        size_ = static_cast<SizeType>(objects.size());
+        if (size_ > 0)
+        {
+            objects_ = new T[size_];
+            SizeType pos = 0;
+            for (T& obj : objects)
+            {
+                objects_[pos] = std::move(obj);
+                pos++;
+            }
+        }
+        else
+        {
+            objects_ = nullptr;
+        }
 	}
 
 	template<typename T, typename SizeType>
 	template<typename TContainer>
 	inline DynamicArray<T, SizeType>::DynamicArray(const TContainer & objects)
-		: objects_(new T[objects.size()]), size_(static_cast<SizeType>(objects.size()))
 	{
-		assert(objects.size() > 0);
-		std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(objects_, size_));
+        size_ = static_cast<SizeType>(objects.size());
+        if (size_ > 0)
+        {
+            objects_ = new T[size_];
+            std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(objects_, size_));
+        }
+        else
+        {
+            objects_ = nullptr;
+        }
 	}
 
 	template<typename T, typename SizeType>
 	inline DynamicArray<T, SizeType>::DynamicArray(std::initializer_list<T> objects)
-		: objects_(new T[objects.size()]), size_(static_cast<SizeType>(objects.size()))
 	{
-		assert(objects.size() > 0);
-		std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(objects_, size_));
+        size_ = static_cast<SizeType>(objects.size());
+        if (size_ > 0)
+        {
+            objects_ = new T[size_];
+            std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(objects_, size_));
+        }
+        else
+        {
+            objects_ = nullptr;
+        }
 	}
 
 	template<typename T, typename SizeType>
 	inline DynamicArray<T, SizeType>::DynamicArray(const DynamicArray& arg)
-		: objects_(new T[arg.size_]), size_(arg.size_)
 	{
-		assert(arg.size() > 0);
-		std::copy(&arg.objects_[0], &arg.objects_[arg.size_], stdext::checked_array_iterator<T*>(objects_, size_));
+        size_ = arg.size_;
+        if (size_ > 0)
+        {
+            objects_ = new T[size_];
+            std::copy(&arg.objects_[0], &arg.objects_[arg.size_], stdext::checked_array_iterator<T*>(objects_, size_));
+        }
+        else
+        {
+            objects_ = nullptr;
+        }
 	}
 
 	template<typename T, typename SizeType>
