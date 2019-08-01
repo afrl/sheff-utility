@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <limits>
+#include <memory>
 #include <vector>
 
 namespace utility
@@ -86,8 +87,13 @@ namespace utility
 		void clear();
 
 	protected:
+        std::allocator<T> allocator_;
 		T* objects_;
 		SizeType size_;
+
+        /// Destroys objects and deallocates memory, returning objects to a nullptr
+        /// and size to 0.
+        void cleanup_if_needed(T* & objects, SizeType & size);
 	};
 
 	/////////////////
@@ -103,47 +109,85 @@ namespace utility
 
 	template<typename T, typename SizeType>
 	inline DynamicArray<T, SizeType>::DynamicArray(const SizeType num_objects)
-		: objects_(new T[num_objects]), size_(static_cast<SizeType>(num_objects))
 	{
+        objects_ = allocator_.allocate(num_objects);
+        size_ = static_cast<SizeType>(num_objects);
+        // Default construct each element
+        for (SizeType i = 0; i < size_; i++)
+        {
+            allocator_.construct(&objects_[i]);
+        }
 	}
 
 	template<typename T, typename SizeType>
 	template<typename TContainer>
 	inline DynamicArray<T, SizeType>::DynamicArray(TContainer && objects)
-		: objects_(new T[objects.size()]), size_(static_cast<SizeType>(objects.size()))
 	{
-		assert(objects.size() > 0);
-		SizeType pos = 0;
-		for (T& obj : objects)
-		{
-			objects_[pos] = std::move(obj);
-			pos++;
-		}
+        if (objects.empty())
+        {
+            objects_ = nullptr;
+            size_ = 0;
+        }
+        else
+        {
+            objects_ = allocator_.allocate(objects.size());
+            size_ = static_cast<SizeType>(objects.size());
+            SizeType pos = 0;
+            for (T& obj : objects)
+            {
+                objects_[pos] = std::move(obj);
+                pos++;
+            }
+        }
 	}
 
 	template<typename T, typename SizeType>
 	template<typename TContainer>
 	inline DynamicArray<T, SizeType>::DynamicArray(const TContainer & objects)
-		: objects_(new T[objects.size()]), size_(static_cast<SizeType>(objects.size()))
 	{
-		assert(objects.size() > 0);
-		std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(objects_, size_));
+        if (objects.empty())
+        {
+            objects_ = nullptr;
+            size_ = 0;
+        }
+        else
+        {
+            objects_ = allocator_.allocate(objects.size());
+            size_ = static_cast<SizeType>(objects.size());
+            std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(objects_, size_));
+        }
 	}
 
 	template<typename T, typename SizeType>
 	inline DynamicArray<T, SizeType>::DynamicArray(std::initializer_list<T> objects)
-		: objects_(new T[objects.size()]), size_(static_cast<SizeType>(objects.size()))
 	{
-		assert(objects.size() > 0);
-		std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(objects_, size_));
+        if (objects.empty())
+        {
+            objects_ = nullptr;
+            size_ = 0;
+        }
+        else
+        {
+            objects_ = allocator_.allocate(objects.size());
+            size_ = static_cast<SizeType>(objects.size());
+            std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(objects_, size_));
+        }
 	}
 
 	template<typename T, typename SizeType>
 	inline DynamicArray<T, SizeType>::DynamicArray(const DynamicArray& arg)
-		: objects_(new T[arg.size_]), size_(arg.size_)
 	{
-		assert(arg.size() > 0);
-		std::copy(&arg.objects_[0], &arg.objects_[arg.size_], stdext::checked_array_iterator<T*>(objects_, size_));
+        if (objects.empty())
+        {
+            objects_ = nullptr;
+            size_ = 0;
+        }
+        else
+        {
+            objects_ = allocator_.allocate(arg.size_);
+            size_ = static_cast<SizeType>(arg.size_);
+            std::copy(&arg.objects_[0], &arg.objects_[arg.size_], stdext::checked_array_iterator<T*>(objects_, size_));
+        }
 	}
 
 	template<typename T, typename SizeType>
@@ -195,20 +239,26 @@ namespace utility
 	inline void DynamicArray<T, SizeType>::push_back(const T & entry)
 	{
 		auto tmp = objects_;
-		objects_ = new T[size_ + 1];
-		std::copy(&tmp[0], &tmp[size_], stdext::checked_array_iterator<T*>(objects_, size_));
+        auto tmp_size = size_;
+
+		objects_ = allocator_.allocate(size_ + 1);
+		std::copy(&tmp[0], &tmp[tmp_size], stdext::checked_array_iterator<T*>(objects_, size_));
 		objects_[size_] = T(entry);
 		size_++;
-		delete[] tmp;
+
+        cleanup_if_needed(tmp, tmp_size);
 	}
 
 	template<typename T, typename SizeType>
 	inline void DynamicArray<T, SizeType>::resize(const SizeType num_objects)
 	{
-		if (objects_ != nullptr)
-			delete[] objects_;
+        cleanup_if_needed(objects_, size_);
 
-		objects_ = new T[num_objects]();
+        objects_ = allocator_.allocate(num_objects);
+        for (auto i = 0; i < size_; i++)
+        {
+            allocator_.construct(objects_ + i);
+        }
 		size_ = num_objects;
 	}
 
@@ -233,8 +283,8 @@ namespace utility
 	inline DynamicArray<T, SizeType> & DynamicArray<T, SizeType>::operator=(const EntryPtrContainer & objects)
 	{
 		assert(objects.size() < std::numeric_limits<SizeType>::max());
-		delete[] this->objects_;
-		this->objects_ = new T[objects.size()];
+        cleanup_if_needed(objects_, size_);
+		this->objects_ = allocator_.allocate(objects.size());
 		this->size_ = static_cast<SizeType>(objects.size());
 		std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(this->objects_, this->size_));
 		return *this;
@@ -244,7 +294,7 @@ namespace utility
 	template<typename EntryPtrContainer>
 	inline DynamicArray<T, SizeType> & DynamicArray<T, SizeType>::operator=(EntryPtrContainer && objects)
 	{
-		objects_ = new T[objects.size()];
+		objects_ = allocator_.allocate(objects.size());
 		size_ = static_cast<SizeType>(objects.size());
 		SizeType pos = 0;
 		for (T& obj : objects)
@@ -258,8 +308,8 @@ namespace utility
 	template<typename T, typename SizeType>
 	inline DynamicArray<T, SizeType> & DynamicArray<T, SizeType>::operator=(const DynamicArray & other)
 	{
-		delete[] this->objects_;
-		this->objects_ = new T[other.size_];
+        cleanup_if_needed(objects_, size_);
+		this->objects_ = allocator_.allocate(other.size());
 		this->size_ = other.size_;
 		std::copy(&other.objects_[0], &other.objects_[other.size_], stdext::checked_array_iterator<T*>(this->objects_, this->size_));
 		return *this;
@@ -276,11 +326,23 @@ namespace utility
 	template<typename T, typename SizeType>
 	inline void DynamicArray<T, SizeType>::clear()
 	{
-        if (objects_ != nullptr)
-        {
-            delete[] objects_;
-        }
-		size_ = 0;
+        cleanup_if_needed(objects_, size_);
 	}
+
+    template<typename T, typename SizeType>
+    inline void DynamicArray<T, SizeType>::cleanup_if_needed(T* & objects, SizeType & size)
+    {
+        if (objects != nullptr)
+        {
+            for (auto i = 0; i < size; i++)
+            {
+                allocator_.destroy(objects + i);
+            }
+            allocator_.deallocate(objects, size);
+        }
+
+        objects = nullptr;
+        size = 0;
+    }
 
 }
