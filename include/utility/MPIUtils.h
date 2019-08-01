@@ -119,23 +119,7 @@ namespace utility
 
 	inline bool MPIUtils::is_distributed()
 	{
-	#ifdef HAVE_MPI
-		MPIUtilsState& state = fea_io::MPIUtils::get_state();
-
-		if (state.initialized == true)
-		{
-			return state.global_rank > 1;
-		}
-		else
-		{
-			MPI_Init(nullptr, nullptr);
-			int global_rank;
-			MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
-			return global_rank > 1;
-		}
-	#else
-		return false;
-	#endif
+        return get_num_local_ranks() > 1;
 	}
 
 	inline void MPIUtils::init(int * argc, char *** argv, const int group_key, const bool quiet)
