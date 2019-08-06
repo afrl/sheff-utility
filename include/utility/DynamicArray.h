@@ -57,8 +57,13 @@ namespace utility
 
 		/// And an element to the end, reallocates for each addition (unlike vector)
 		void push_back(const T& entry);
+        void push_back(T&& entry);
 		/// Resizes the array to a certain number of objects.  The default constructor is called for each object.
 		void resize(const SizeType num_objects);
+        /// Appends an empty object to the back of the array.  This is useful if the array
+        /// is storing another array of unique_ptr objects, causing push_back to cause a problem
+        /// with the copy.
+        void push_back_empty();
 
 		const T & operator [] (const SizeType i) const;
 		T & operator [] (const SizeType i);
@@ -82,6 +87,8 @@ namespace utility
 		/// Note: if T = std::unique_ptr<...>, this method will cause a deleted function
 		/// error since the unique_ptr is not copyable.
 		const std::vector<T> copy_as_vector() const;
+
+        void swap(DynamicArray& other);
 
 		/// Clears the container and frees the memory
 		void clear();
@@ -177,7 +184,7 @@ namespace utility
 	template<typename T, typename SizeType>
 	inline DynamicArray<T, SizeType>::DynamicArray(const DynamicArray& arg)
 	{
-        if (objects.empty())
+        if (arg.size_ == 0)
         {
             objects_ = nullptr;
             size_ = 0;
@@ -238,16 +245,56 @@ namespace utility
 	template<typename T, typename SizeType>
 	inline void DynamicArray<T, SizeType>::push_back(const T & entry)
 	{
-		auto tmp = objects_;
-        auto tmp_size = size_;
+        if (objects_)
+        {
+            auto tmp = objects_;
+            auto tmp_size = size_;
 
-		objects_ = allocator_.allocate(size_ + 1);
-		std::copy(&tmp[0], &tmp[tmp_size], stdext::checked_array_iterator<T*>(objects_, size_));
-		objects_[size_] = T(entry);
-		size_++;
+            size_++;
+            objects_ = allocator_.allocate(size_);
 
-        cleanup_if_needed(tmp, tmp_size);
+            for (SizeType i = 0; i < tmp_size; i++)
+            {
+                allocator_.construct(&objects_[i], std::move(tmp[i]));
+            }
+            allocator_.construct(&objects_[size_ - 1], entry);
+
+            cleanup_if_needed(tmp, tmp_size);
+        }
+        else
+        {
+            size_ = 1;
+            objects_ = allocator_.allocate(size_);
+            allocator_.construct(&objects_[size_ - 1], entry);
+        }
 	}
+
+    template<typename T, typename SizeType>
+    inline void DynamicArray<T, SizeType>::push_back(T&& entry)
+    {
+        if (objects_)
+        {
+            auto tmp = objects_;
+            auto tmp_size = size_;
+
+            size_++;
+            objects_ = allocator_.allocate(size_);
+
+            for (SizeType i = 0; i < tmp_size; i++)
+            {
+                allocator_.construct(&objects_[i], std::move(tmp[i]));
+            }
+            allocator_.construct(&objects_[size_ - 1], std::move(entry));
+
+            cleanup_if_needed(tmp, tmp_size);
+        }
+        else
+        {
+            size_ = 1;
+            objects_ = allocator_.allocate(size_);
+            allocator_.construct(&objects_[size_ - 1], std::move(entry));
+        }
+    }
 
 	template<typename T, typename SizeType>
 	inline void DynamicArray<T, SizeType>::resize(const SizeType num_objects)
@@ -255,12 +302,39 @@ namespace utility
         cleanup_if_needed(objects_, size_);
 
         objects_ = allocator_.allocate(num_objects);
+        size_ = num_objects;
         for (auto i = 0; i < size_; i++)
         {
             allocator_.construct(objects_ + i);
         }
-		size_ = num_objects;
 	}
+
+    template<typename T, typename SizeType>
+    inline void DynamicArray<T, SizeType>::push_back_empty()
+    {
+        if (objects_)
+        {
+            auto tmp = objects_;
+            auto tmp_size = size_;
+
+            size_++;
+            objects_ = allocator_.allocate(size_);
+
+            for (SizeType i = 0; i < tmp_size; i++)
+            {
+                allocator_.construct(&objects_[i], std::move(tmp[i]));
+            }
+            allocator_.construct(&objects_[size_ - 1]);
+
+            cleanup_if_needed(tmp, tmp_size);
+        }
+        else
+        {
+            size_ = 1;
+            objects_ = allocator_.allocate(size_);
+            allocator_.construct(&objects_[size_ - 1]);
+        }
+    }
 
 	template<typename T, typename SizeType>
 	inline const T & DynamicArray<T, SizeType>::operator[](const SizeType i) const
@@ -322,6 +396,13 @@ namespace utility
 		std::copy(&objects_[0], &objects_[size_], conn_copy.begin());
 		return conn_copy;
 	}
+
+    template<typename T, typename SizeType>
+    inline void DynamicArray<T, SizeType>::swap(DynamicArray& other)
+    {
+        std::swap(this->objects_, other.objects_);
+        std::swap(this->size_, other.size_);
+    }
 
 	template<typename T, typename SizeType>
 	inline void DynamicArray<T, SizeType>::clear()
