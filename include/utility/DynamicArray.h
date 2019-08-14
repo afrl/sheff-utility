@@ -177,7 +177,13 @@ namespace utility
         {
             objects_ = allocator_.allocate(objects.size());
             size_ = static_cast<SizeType>(objects.size());
-            std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(objects_, size_));
+            SizeType i = 0;
+            for (auto obj : objects)
+            {
+                allocator_.construct(&objects_[i], obj);
+                i++;
+            }
+            //std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(objects_, size_));
         }
 	}
 
@@ -193,7 +199,11 @@ namespace utility
         {
             objects_ = allocator_.allocate(arg.size_);
             size_ = static_cast<SizeType>(arg.size_);
-            std::copy(&arg.objects_[0], &arg.objects_[arg.size_], stdext::checked_array_iterator<T*>(objects_, size_));
+            for (SizeType i = 0; i < size_; i++)
+            {
+                allocator_.construct(&objects_[i], arg.objects_[i]);
+            }
+            //std::copy(&arg.objects_[0], &arg.objects_[arg.size_], stdext::checked_array_iterator<T*>(objects_, size_));
         }
 	}
 
