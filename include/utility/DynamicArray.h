@@ -161,7 +161,7 @@ namespace utility
     template<typename T, typename SizeType>
     inline DynamicArray<T, SizeType>::DynamicArray(std::initializer_list<T> objects)
     {
-        if (objects.empty())
+        if( objects.size() == 0 )
         {
             objects_ = nullptr;
             size_ = 0;
@@ -181,9 +181,9 @@ namespace utility
     }
 
     template<typename T, typename SizeType>
-    inline DynamicArray<T, SizeType>::DynamicArray(const DynamicArray& arg)
+    inline DynamicArray<T, SizeType>::DynamicArray( const DynamicArray& arg )
     {
-        if( objects_.empty() )
+        if( arg.size_ == 0 )
         {
             objects_ = nullptr;
             size_ = 0;
