@@ -1,16 +1,16 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required( VERSION 3.8 )
 
-cmake_policy(SET CMP0048 NEW)
-project(UTILITY VERSION 1.0.0 LANGUAGES CXX)
+cmake_policy( SET CMP0048 NEW )
+project( UTILITY VERSION 1.0.0 LANGUAGES CXX )
 
 # Options
-option(UTILITY_BuildDev "Build the project in the dev folder. (intended for debugging this project by devs)" OFF)
-option(UTILITY_BuildTests "Build the unit tests." OFF)
-option(UTILITY_HaveFilesystem "Use if compiler has included <experimental/filesystem>" ON) 
+option( UTILITY_BuildDev          "Build the project in the dev folder. (intended for debugging this project by devs)" OFF )
+option( UTILITY_BuildTests        "Build the unit tests." OFF )
+option( UTILITY_UseFilesystemHack "Use if compiler has included <experimental/filesystem>" OFF )
 
 # For debugging, print generator, compiler, and options
-message(STATUS "Gen: ${CMAKE_GENERATOR}, CXX: ${CMAKE_CXX_COMPILER_ID}, Mode: ${CMAKE_BUILD_TYPE}")
-message(STATUS "Dev: ${UTILITY_BuildDev}, Tests: ${UTILITY_BuildTests}, FS: ${UTILITY_HaveFilesystem}")
+message( STATUS "Gen: ${CMAKE_GENERATOR}, CXX: ${CMAKE_CXX_COMPILER_ID}, Mode: ${CMAKE_BUILD_TYPE}" )
+message( STATUS "Dev: ${UTILITY_BuildDev}, Tests: ${UTILITY_BuildTests}, FS HACK: ${UTILITY_UseFilesystemHack}" )
 
 ##################
 # Checking input #
@@ -31,11 +31,12 @@ find_package(SecondPartyMath CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../secon
 ################################
 
 # Set the variables for UTILITY
-set(UTILITY_INCLUDE ${CMAKE_SOURCE_DIR}/include)
-set(UTILITY_INCLUDE_SUB ${UTILITY_INCLUDE}/utility)
-set(UTILITY_SRC ${CMAKE_SOURCE_DIR}/source)
-file (GLOB_RECURSE UTILITY_HEADER_LIST "${UTILITY_INCLUDE}/*.h")
-file (GLOB_RECURSE UTILITY_SOURCE_LIST "${UTILITY_SRC}/*.h" "${UTILITY_SRC}/*.cpp")
+set( UTILITY_INCLUDE     ${CMAKE_SOURCE_DIR}/include )
+set( UTILITY_INCLUDE_SUB ${UTILITY_INCLUDE}/utility )
+set( UTILITY_SRC         ${CMAKE_SOURCE_DIR}/source )
+
+file( GLOB_RECURSE UTILITY_HEADER_LIST "${UTILITY_INCLUDE}/*.h" )
+file( GLOB_RECURSE UTILITY_SOURCE_LIST "${UTILITY_SRC}/*.h" "${UTILITY_SRC}/*.cpp" )
     
 # Create target
 add_library(utility STATIC)
@@ -53,16 +54,18 @@ target_sources(utility PRIVATE ${UTILITY_SOURCE_LIST})
 add_library(Utility::Utility ALIAS utility)
 # Add C++ 14 flag
 target_compile_features(utility PUBLIC cxx_std_14)
-# Use filesystem if available
-if (UTILITY_HaveFilesystem)
-  add_definitions(-DHAVE_FILESYSTEM)
-  # Add flag to link with experimental/filesystem if GNU. This requires GCC >= 5.3.
-  if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
-      target_link_libraries(utility PUBLIC libstdc++fs.a)
-  endif()
-else()
+
+# Use filesystem if available, otherwise use our hack.
+if( UTILITY_UseFilesystemHack )
   remove_definitions(-DHAVE_FILESYSTEM)
+  # Add flag to link with experimental/filesystem if GNU. This requires GCC >= 5.3.
+else()
+  add_definitions( -DHAVE_FILESYSTEM )
+  if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
+      target_link_libraries( utility PUBLIC libstdc++fs.a )
+  endif()
 endif()
+
 # Link dependencies
 target_link_libraries(utility PUBLIC SecondPartyMath::SecondPartyMath)
 
