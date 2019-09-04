@@ -252,8 +252,12 @@ namespace utility
         auto tmp_size = size_;
 
         objects_ = allocator_.allocate(size_ + 1);
-        std::copy(&tmp[0], &tmp[tmp_size], stdext::checked_array_iterator<T*>(objects_, size_));
-        objects_[size_] = T(entry);
+        for (SizeType i = 0; i < tmp_size; i++)
+        {
+            allocator_.construct(&objects_[i], tmp[i]);
+        }
+        //std::copy(&tmp[0], &tmp[tmp_size], stdext::checked_array_iterator<T*>(objects_, size_));
+        allocator_.construct(&objects_[size_], entry);
         size_++;
 
         cleanup_if_needed(tmp, tmp_size);
