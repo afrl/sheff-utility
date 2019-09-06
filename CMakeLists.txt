@@ -3,6 +3,13 @@ cmake_minimum_required( VERSION 3.8 )
 cmake_policy( SET CMP0048 NEW )
 project( UTILITY VERSION 1.0.0 LANGUAGES CXX )
 
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    # require at least gcc 6.0
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.0)
+        message( FATAL_ERROR "GCC version must be at least 6.0! (Found: ${CMAKE_CXX_COMPILER_VERSION})" )
+    endif()
+endif()
+
 # Options
 option( UTILITY_BuildDev          "Build the project in the dev folder. (intended for debugging this project by devs)" OFF )
 option( UTILITY_BuildTests        "Build the unit tests." OFF )
