@@ -628,7 +628,11 @@ def config( opts, module_dir, specialized_options = [] ):
 
     module_name_caps = module_dir.name.upper().replace('_', '')
 
-    cmake_flags = " -DCMAKE_BUILD_TYPE=" + opts.cmake_opts["build-type"] + " -j " + str( opts.n_jobs )
+    vflag = ""
+    if( opts.verbose ):
+        vflag = " -- VERBOSE=true "
+
+    cmake_flags = " -DCMAKE_BUILD_TYPE=" + opts.cmake_opts["build-type"] + " -j " + str( opts.n_jobs ) + vflag
 
     if module_dir.module_type != ModuleType.ThirdParty:
         cmake_flags += ' -D' + module_name_caps + '_BuildDev:BOOL='   + opts.cmake_opts["make-dev"]   + \
