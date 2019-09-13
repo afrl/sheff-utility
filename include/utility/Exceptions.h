@@ -5,22 +5,28 @@
 #include <exception>
 #include <typeinfo>
 
+std::string demangle( const char* name );
+
 // Use this in functions
-#define _UTIL_MSG_EXCEPT(m) utility::MsgException(__FILE__, "", __func__, __LINE__, m)
+#define _UTIL_MSG_EXCEPT( msg )   utility::MsgException( __FILE__, "", __func__, __LINE__, msg )
+
 // Use this in class methods
-#define _UTIL_MSG_EXCEPT_C(m) utility::MsgException(__FILE__, typeid(*this).name(), __func__, __LINE__, m)
+#define _UTIL_MSG_EXCEPT_C( msg ) utility::MsgException( __FILE__, demangle( typeid(*this).name() ), __func__, __LINE__, msg )
+
 // Assertion for functions
 #ifdef DISABLE_ASSERTIONS
-#define _UTIL_ASSERT(x, m)
+#    define _UTIL_ASSERT(x, m)
 #else
-#define _UTIL_ASSERT(x, m) if (!(x)) { throw _UTIL_MSG_EXCEPT(m); }
+#    define _UTIL_ASSERT(x, m) if (!(x)) { throw _UTIL_MSG_EXCEPT(m); }
 #endif
+
 // Assertion for class methods
 #ifdef DISABLE_ASSERTIONS
-#define _UTIL_ASSERT_C(x, m)
+#    define _UTIL_ASSERT_C(x, m)
 #else
-#define _UTIL_ASSERT_C(x, m) if (!(x)) { throw _UTIL_MSG_EXCEPT_C(m); }
+#    define _UTIL_ASSERT_C(x, m) if (!(x)) { throw _UTIL_MSG_EXCEPT_C(m); }
 #endif
+
 #define _UTIL_WARN(m) std::cerr << utility::build_warning_msg(__FILE__, "", __func__, __LINE__, m) << std::endl;
 #define _UTIL_WARN_C(m) std::cerr << utility::build_warning_msg(__FILE__, typeid(*this).name(), __func__, __LINE__, m) << std::endl;
 
@@ -28,32 +34,33 @@ namespace utility
 {
     static std::string build_warning_msg(const std::string file, const std::string cls, const std::string func, const int line, const std::string msg = "")
     {
-        return "Warning " + msg + "\n\t\tOcurred in:\n\t\t" + file + ":" + std::to_string(line) + " in\n\t\t" + ((cls == "") ? " function " + func : func + " method of " + cls);
+        return "Warning " + msg + "\n\t\tOcurred in:\n\t\t" + file + ":" + std::to_string(line) + " in\n\t\t" +
+               ((cls == "") ? " function " + func : func + " method of " + cls);
     }
 
-	/// \brief A simple exception class to throw inside Beta.
-	/// Use the macro's defined above in this header file.  The uses are as follows:
-	/// - _UTIL_MSG_EXCEPT(string message) should be used in functions
-	/// - _UTIL_MSG_EXCEPT_C(string message) should be used in classes
-	/// For example:
-	/// \code{.cpp}
-	/// void foo() {
-	///     throw _UTIL_MSG_EXCEPT("Not implemented.");
-	/// }
-	/// \endcode
-	class MsgException : public std::exception
-	{
-	public:
-		MsgException(const std::string file, const std::string cls, const std::string func, const int line, const std::string addMsg = "") {
-			msg = "An error occured in \n\t\t" + file + ":" + std::to_string(line) + " in\n\t\t" + ((cls == "") ? " function " + func : func + " method of " + cls)
-				+ ((addMsg != "") ? ". With message:\n\n" + addMsg : ".\n");
-		}
+    /// \brief A simple exception class to throw inside Beta.
+    /// Use the macro's defined above in this header file.  The uses are as follows:
+    /// - _UTIL_MSG_EXCEPT(string message) should be used in functions
+    /// - _UTIL_MSG_EXCEPT_C(string message) should be used in classes
+    /// For example:
+    /// \code{.cpp}
+    /// void foo() {
+    ///     throw _UTIL_MSG_EXCEPT("Not implemented.");
+    /// }
+    /// \endcode
+    class MsgException : public std::exception
+    {
+    public:
+        MsgException(const std::string file, const std::string cls, const std::string func, const int line, const std::string addMsg = "") {
+            msg = "An error occurred in:\n\t\tFile:     " + file + ":" + std::to_string(line) + "\n\t\t" +
+                ((cls == "") ? "Function: " + func : "Method:   "  + func + "() from Class " + cls ) +
+                ((addMsg != "") ? "\n\t\tMessage:  " + addMsg : ".\n");
+        }
 
-		virtual const char* what() const noexcept {
-			return msg.c_str();
-		}
+        virtual const char* what() const noexcept { return msg.c_str(); }
 
-	private:
-		std::string msg;
-	};
-}
+    private:
+        std::string msg;
+    };
+
+} // end namespace utility
