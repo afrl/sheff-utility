@@ -37,7 +37,7 @@ namespace utility
 #define _UTIL_MSG_EXCEPT( msg )   utility::MsgException( __FILE__, "", __func__, __LINE__, msg )
 
 // Use this in class methods
-#define _UTIL_MSG_EXCEPT_C( msg ) utility::MsgException( __FILE__, demangle( typeid(*this).name() ), __func__, __LINE__, msg )
+#define _UTIL_MSG_EXCEPT_C( msg ) utility::MsgException( __FILE__, utility::demangle( typeid(*this).name() ), __func__, __LINE__, msg )
 
 // Assertion for functions
 #ifdef DISABLE_ASSERTIONS
