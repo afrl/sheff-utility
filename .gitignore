@@ -7,3 +7,4 @@ docs/html/
 *.pyc
 __pycache__
 *~
+.vscode

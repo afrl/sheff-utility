@@ -74,7 +74,7 @@ namespace utility
         ///
         /// Note 1: This function should be called before any other MPIUtil functions are called.
         /// Note 2: if MPI is not configured, then this function will do nothing.
-        static void init( int *argc, char ***argv, const int group_key = 0, const bool quiet = true );
+        static void init(int *argc, char ***argv, const int group_key = 0, const bool quiet = true);
 
         /// Creates a barrier such that each process (in the respective communicator)
         /// will wait until every process gets to.
@@ -103,13 +103,13 @@ namespace utility
         static void receive_from_group(std::vector<T>& data, int target_group_key);
 
         /// An accessor method to get global rank
-        static const int get_global_rank() { return state_.global_rank; }
+        static const int get_global_rank() { return get_state().global_rank; }
 
         /// An accessor method to get local rank
-        static const int get_local_rank() { return state_.local_rank; }
+        static const int get_local_rank() { return get_state().local_rank; }
 
         /// Returns the local communicator for the processors that call init with the same group_key
-        static const int get_local_comm() { return state_.local_comm; }
+        static const int get_local_comm() { return get_state().local_comm; }
 
         /// Returns the number of ranks in the local communicator
         static const int get_num_local_ranks();
@@ -123,7 +123,10 @@ namespace utility
 
     private:
 
-        static MPIUtilsState state_;
+        static MPIUtilsState& get_state() {
+			static MPIUtilsState state;
+			return state;
+		}
     };
 
 #ifndef NDEBUG
@@ -131,7 +134,7 @@ namespace utility
      //        Note, this occurs a number of times in this file...  Also, why "____::MPIUtils::" at all?
 #    define VERIFY_INIT( func_name ) \
          { \
-             if( !state_.initialized ) { \
+             if( !get_state().initialized ) { \
                  throw _UTIL_MSG_EXCEPT( "MPIUtils::" + std::string( func_name ) + "() called before MPIUtils::init()." ); \
              } \
          }
@@ -153,8 +156,10 @@ namespace utility
 #ifndef HAVE_MPI
         return;
 #else
+        MPIUtilsState& state = fea_io::MPIUtils::get_state();
+
         // If the object has already been initialized, just return
-        if( state_.initialized == true ) {
+        if( state.initialized == true ) {
             // If init() is called more than once, there probably is a logic error in the code that
             // should be addressed (as opposed to ignoring the call)... Thoughts?
             throw _UTIL_MSG_EXCEPT( "MPIUtils::init() already called." );
@@ -173,8 +178,8 @@ namespace utility
         // FIXME: what are MPI groups and are they handled correctly here?  Also, how many total ranks are there?  Is this stored somewhere?
 
         // Get rank
-        MPI_Comm_rank( MPI_COMM_WORLD, &state_.global_rank );
-        std::cout << "rank is: " << state_.global_rank << "\n";
+        MPI_Comm_rank( MPI_COMM_WORLD, &state.global_rank );
+        std::cout << "rank is: " << state.global_rank << "\n";
 
         // Get group handle for all_process_group from Comm_World
         // Each process started by the mpiexec must make the split call
@@ -183,17 +188,17 @@ namespace utility
         // Every process with the same "color" will be put in the same group.
         // As a result, each program can have its own communicator.
         // Ordering will be
-        state_.local_group_key = group_key;
-        MPI_Comm_split( MPI_COMM_WORLD, group_key, state_.global_rank, &state_.local_comm );
+        state.local_group_key = group_key;
+        MPI_Comm_split( MPI_COMM_WORLD, group_key, state.global_rank, &state.local_comm );
 
         // Get the resulting group for the communicator
         MPI_Group local_group;
-        MPI_Comm_group( state_.local_comm, &local_group );
+        MPI_Comm_group( state.local_comm, &local_group );
 
         // Now we can get the rank of the process in its group.
         // This is more useful as each program will have operations
         // for its group based on its rank.
-        MPI_Group_rank( local_group, &state_.local_rank );
+        MPI_Group_rank(local_group, &state.local_rank);
 
         // Free the group since we have the rank now
         MPI_Group_free(&local_group);
@@ -202,43 +207,48 @@ namespace utility
         // sum of numbers from every process, with the root
         // (rank 0) of each group submitting 1 and the rest 0
         int group_contrib = 0;
-        if( state_.local_rank == 0 ) {
+        if (state.local_rank == 0)
+        {
             group_contrib = 1;
         }
-        MPI_Allreduce( &group_contrib, &state_.num_groups, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
+        MPI_Allreduce( &group_contrib, &state.num_groups, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
 
         // Output the number of groups
-        if( state_.global_rank == 0 && quiet == false ) {
-            std::cout << state_.num_groups << " groups were created by MPI_Comm_split.\n";
+        if (state.global_rank == 0 && quiet == false)
+        {
+            std::cout << state.num_groups << " groups were created by MPI_Comm_split.\n";
         }
 
         // Now lets get the ranks of the root processes of the other groups
-        for (int i = 0; i < state_.num_groups; i++) {
+        for (int i = 0; i < state.num_groups; i++) {
             // A summation is done to to find the root global rank of each each group.
             // If i is not the current group key or the local rank is not 0,
             // then just contribute 0 to the sum.  Otherwise contribute the
             // global_rank of the process.
             int rank_term = 0;
-            if (i == group_key && state_.local_rank == 0) {
-                rank_term = state_.global_rank;
+            if (i == group_key && state.local_rank == 0)
+            {
+                rank_term = state.global_rank;
             }
 
             // Do the reduce, and save result
             int result = 0;
             MPI_Allreduce(&rank_term, &result, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-            state_.root_ranks.push_back( result );
+            state.root_ranks.push_back(result);
         }
 
         // Output the ranks of the root of each group
-        if( state_.global_rank == 0 && quiet == false ) {
+        if (state.global_rank == 0 && quiet == false)
+        {
             std::cout << "Global ranks of the root of each group:\n";
-            for (unsigned int i = 0; i < state_.root_ranks.size(); i++) {
-                std::cout << "[" << i << "] " << state_.root_ranks[i] << std::endl;
+            for (unsigned int i = 0; i < state.root_ranks.size(); i++)
+            {
+                std::cout << "[" << i << "] " << state.root_ranks[i] << std::endl;
             }
         }
 
         // Set the flag in the base class that indicates if the class is initialized
-        state_.initialized = true;
+        state.initialized = true;
 #endif
     }
 
@@ -247,8 +257,8 @@ namespace utility
 #ifdef HAVE_MPI
         VERIFY_INIT( "barrier" );
         // Select which comm to use for all MPI operations in this call
-        MPI_Comm comm = use_local_comm ? state_.local_comm : MPI_COMM_WORLD;
-        MPI_Barrier( comm );
+        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
+        MPI_Barrier(comm);
 #endif
     }
 
@@ -259,7 +269,7 @@ namespace utility
         VERIFY_INIT( "gather_vectors" );
 
         // Select which comm to use for all MPI operations in this call
-        MPI_Comm comm = use_local_comm ? state_.local_comm : MPI_COMM_WORLD;
+        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
         // Get information about the MPI communicator
         int comm_size;
         MPI_Comm_size(comm, &comm_size);
@@ -338,15 +348,16 @@ namespace utility
     {
 #ifdef HAVE_MPI
         VERIFY_INIT( "send_to_group" );
+        const MPIUtilsState& state = fea_io::MPIUtils::get_state();
         // Only let the local root send information
-        if( state_.local_rank != 0 ) {
-            // FIXME: is this an error?  If so, throw an exception?
+        if(state.local_rank != 0)
+        {
             return;
         }
 
         // Send as a char array.  It is up to the other program to receive with the correct
         // templated type.
-        MPI_Send( &data[0], data.size() * sizeof(T), MPI_CHAR, state_.root_ranks[target_group_key], 0, MPI_COMM_WORLD );
+        MPI_Send(&data[0], data.size() * sizeof(T), MPI_CHAR, state.root_ranks[target_group_key], 0, MPI_COMM_WORLD);
 #endif
     }
 
@@ -355,14 +366,16 @@ namespace utility
     {
 #ifdef HAVE_MPI
         VERIFY_INIT( "receive_from_group" );
+        const MPIUtilsState& state = fea_io::MPIUtils::get_state();
         // Only let the local root send information
-        if( state_.local_rank != 0 ) {
+        if(state.local_rank != 0)
+        {
             return;
         }
 
         // Probe the message to see the size of the data it is about to receive
         MPI_Status status;
-        MPI_Probe( state_.root_ranks[target_group_key], 0, MPI_COMM_WORLD, &status );
+        MPI_Probe(state.root_ranks[target_group_key], 0, MPI_COMM_WORLD, &status);
 
         // Get the count from the status
         int num_bytes = 0;
@@ -371,7 +384,7 @@ namespace utility
         data.resize(num_values);
 
         // Do the receive
-        MPI_Recv(&data[0], data.size() * sizeof(T), MPI_CHAR, state_.root_ranks[target_group_key], 0, MPI_COMM_WORLD, &status);
+        MPI_Recv(&data[0], data.size() * sizeof(T), MPI_CHAR, state.root_ranks[target_group_key], 0, MPI_COMM_WORLD, &status);
 #endif
     }
 
@@ -380,7 +393,7 @@ namespace utility
 #ifdef HAVE_MPI
         VERIFY_INIT( "get_num_local_ranks" );
         int comm_size;
-        MPI_Comm_size( state_.local_comm, &comm_size );
+        MPI_Comm_size(get_state().local_comm, &comm_size);
         return comm_size;
 #else
         return 1;
@@ -391,9 +404,11 @@ namespace utility
     {
 #ifdef HAVE_MPI
         VERIFY_INIT( "finalize" );
-        state_.reset();
+        get_state().reset();
 
         MPI_Finalize();
 #endif
     }
 }
+
+#undef VERIFY_INIT
