@@ -130,7 +130,7 @@ namespace utility
 	template<typename TContainer>
 	inline DynamicArray<T, SizeType>::DynamicArray(TContainer && objects)
 	{
-        if (objects.empty())
+        if (objects.size() == 0)
         {
             objects_ = nullptr;
             size_ = 0;
@@ -140,7 +140,7 @@ namespace utility
             objects_ = allocator_.allocate(objects.size());
             size_ = static_cast<SizeType>(objects.size());
             SizeType pos = 0;
-            for (T& obj : objects)
+            for (auto& obj : objects)
             {
                 objects_[pos] = std::move(obj);
                 pos++;
