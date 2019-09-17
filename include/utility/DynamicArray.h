@@ -142,7 +142,7 @@ namespace utility
             SizeType pos = 0;
             for (auto& obj : objects)
             {
-                objects_[pos] = std::move(obj);
+                allocator_.construct(&objects_[pos], std::move(obj));
                 pos++;
             }
         }
