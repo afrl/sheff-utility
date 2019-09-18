@@ -6,6 +6,23 @@
  * and with VS 2017. 
  */
 
+#ifdef HAVE_FILESYSTEM
+
+#   if defined(_WIN32) && !defined(__CYGWIN__)
+#       if _HAS_CXX17
+#           include <filesystem>
+            namespace fs = std::filesystem;
+#       else
+#           include <experimental/filesystem>
+            namespace fs = std::experimental::filesystem;
+#       endif
+#   else
+#           include <experimental/filesystem>
+            namespace fs = std::experimental::filesystem;
+#   endif
+
+#else
+
 #include <iostream>
 #include <stdio.h> // defines FILENAME_MAX
 #include <string> 
@@ -227,3 +244,7 @@ namespace filesystem {
     path current_path();
 
 } } } // end namespaces
+
+namespace fs = std::experimental::filesystem;
+
+#endif // End #ifdef HAVE_FILESYSTEM
