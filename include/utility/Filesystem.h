@@ -232,7 +232,11 @@ namespace filesystem {
 
 
     private: 
-        static const char separator;
+#ifdef _GLIBCXX_FILESYSTEM_IS_WINDOWS 
+        static const char path::separator = '\\';
+#else
+        static const char path::separator = '/';
+#endif
   
         std::string _pathname; 
 
@@ -241,7 +245,16 @@ namespace filesystem {
 
     // Return absolute path of current working dir (getcwd)
     // source: https://stackoverflow.com/questions/143174/how-do-i-get-the-directory-that-a-program-is-running-from
-    path current_path();
+    static path current_path()
+    {
+        char cwd[FILENAME_MAX];   // Linux 4096, Win: 260 !!
+        if (!GetCurrentDir(cwd, FILENAME_MAX)) {
+            std::cout << "current_path(): error!\n";
+        }
+
+        std::string cwd_str(cwd);
+        return path(cwd_str);
+    };
 
 } } } // end namespaces
 
