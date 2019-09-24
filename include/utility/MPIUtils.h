@@ -156,7 +156,7 @@ namespace utility
 #ifndef HAVE_MPI
         return;
 #else
-        MPIUtilsState& state = fea_io::MPIUtils::get_state();
+        MPIUtilsState& state = get_state();
 
         // If the object has already been initialized, just return
         if( state.initialized == true ) {
@@ -348,7 +348,7 @@ namespace utility
     {
 #ifdef HAVE_MPI
         VERIFY_INIT( "send_to_group" );
-        const MPIUtilsState& state = fea_io::MPIUtils::get_state();
+        const MPIUtilsState& state = get_state();
         // Only let the local root send information
         if(state.local_rank != 0)
         {
@@ -366,7 +366,7 @@ namespace utility
     {
 #ifdef HAVE_MPI
         VERIFY_INIT( "receive_from_group" );
-        const MPIUtilsState& state = fea_io::MPIUtils::get_state();
+        const MPIUtilsState& state = get_state();
         // Only let the local root send information
         if(state.local_rank != 0)
         {
