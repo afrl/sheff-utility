@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace fea_io
+namespace utility
 {
     /// This describes all the variables needed for the MPIUtils.
     /// One instance of this will be created for MPIUtils as a static variable.
