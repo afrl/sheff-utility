@@ -13,6 +13,7 @@ endif()
 # Options
 option( UTILITY_BuildDev          "Build the project in the dev folder. (intended for debugging this project by devs)" OFF )
 option( UTILITY_BuildTests        "Build the unit tests." OFF )
+option( UTILITY_USE_MPI "Indicates if the MPI routines should be included in the build." OFF )
 option( UTILITY_UseFilesystemHack "Use if compiler has included <experimental/filesystem>" OFF )
 
 # For debugging, print generator, compiler, and options
@@ -32,6 +33,9 @@ include(${CMAKE_SOURCE_DIR}/cmake/CommonInputChecks.cmake)
 
 find_package(SecondPartyMath CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../second_party_math/build" "${CMAKE_SOURCE_DIR}/../second_party_math/install_dir")
 
+if( UTILITY_USE_MPI )
+    find_package( MPI REQUIRED )
+endif()
 
 ################################
 # Setting up UTILITY target #
@@ -75,6 +79,13 @@ endif()
 
 # Link dependencies
 target_link_libraries(utility PUBLIC SecondPartyMath::SecondPartyMath)
+
+if(UTILITY_USE_MPI AND MPI_FOUND)
+    target_compile_definitions(utility PUBLIC HAVE_MPI)
+    target_include_directories(utility PUBLIC ${MPI_CXX_INCLUDE_PATH})
+    target_link_libraries(utility PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
+    target_compile_options(utility PUBLIC ${MPI_CXX_COMPILE_FLAGS})
+endif()
 
 # Assign source groups
 include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)
