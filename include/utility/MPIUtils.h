@@ -178,13 +178,7 @@ namespace utility
 
     inline bool MPIUtils::is_distributed()
     {
-#ifdef USE_MPI
-        int comm_size;
-        MPI_Comm_size(get_state().local_comm, &comm_size);
-        return comm_size > 1;
-#else
-        return false;
-#endif
+        return get_num_local_ranks() > 1;
     }
 
     inline void MPIUtils::init(int* argc, char*** argv, const int group_key, const bool quiet)
