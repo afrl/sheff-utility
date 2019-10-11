@@ -10,6 +10,10 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     endif()
 endif()
 
+
+message(STATUS $ENV{I_MPI_ROOT})
+
+
 # Options
 option( UTILITY_BuildDev          "Build the project in the dev folder. (intended for debugging this project by devs)" OFF )
 option( UTILITY_BuildTests        "Build the unit tests." OFF )
@@ -68,12 +72,15 @@ target_compile_features(utility PUBLIC cxx_std_14)
 
 # Use filesystem if available, otherwise use our hack.
 if( UTILITY_UseFilesystemHack )
-  remove_definitions(-DHAVE_FILESYSTEM)
-  # Add flag to link with experimental/filesystem if GNU. This requires GCC >= 5.3.
 else()
-  add_definitions( -DHAVE_FILESYSTEM )
+  target_compile_definitions(utility PUBLIC HAVE_FILESYSTEM )
   if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
       target_link_libraries( utility PUBLIC libstdc++fs.a )
+  endif()
+  if ($MSVC)
+      # This is to silence the error that MS will remove <experimental/filesystem> and replace
+      # it with <filesystem>
+      target_compile_definitions(utility PUBLIC _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING)
   endif()
 endif()
 
