@@ -2,7 +2,7 @@
 
 #include "Exceptions.h"
 
-#ifdef USE_MPI
+#ifdef HAVE_MPI
 #    include <mpi.h>
 #endif
 
@@ -43,7 +43,7 @@ namespace utility
 
         void reset() {
             initialized = false;
-#ifdef USE_MPI
+#ifdef HAVE_MPI
             local_comm = MPI_COMM_NULL;
 #endif
             global_rank = 0;
@@ -105,6 +105,17 @@ namespace utility
         template<typename T, typename std::enable_if<!std::is_fundamental<T>::value, T>::type* = nullptr>
         static std::vector<T> gather_vectors(const std::vector<T> & data_from_this_proc, const bool use_local_comm = true);
 
+        /// This method will gather an array from each process and delivers it to every process
+        /// of the communicator specified.  If use_local_comm is used, then the data
+        /// among each group of ranks with the same group_key when init was called
+        /// will be sent to the root rank of the respective group.
+        /// Specialization for fundamental types (i.e. sizeof(T) would yield the number of bytes needed)
+        template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type * = nullptr>
+        static std::vector<T> all_gather_arrays(
+            const T* data_from_this_proc,
+            const int n_data_from_this_proc,
+            const bool use_local_comm = true);
+
         /// This method will gather a vector from each process and delivers it to every process
         /// of the communicator specified.  If use_local_comm is used, then the data
         /// among each group of ranks with the same group_key when init was called
@@ -121,6 +132,19 @@ namespace utility
         /// For this specialization, serialization is required, so the object must be convertable to JSON
         template<typename T, typename std::enable_if<!std::is_fundamental<T>::value, T>::type* = nullptr>
         static std::vector<T> all_gather_vectors(const std::vector<T> & data_from_this_proc, const bool use_local_comm = true);
+
+        // This method will gather an array from each process and delivers it to every process
+        /// of the communicator specified.  This very similar to all_gather_arrays, but the array
+        /// from each rank is kept separate.  The outer vector has a size of n_ranks.
+        ///
+        /// If use_local_comm is used, then the data among each group of ranks with the same
+        /// group_key when init was called will be sent to the root rank of the respective group.
+        /// Specialization for fundamental types (i.e. sizeof(T) would yield the number of bytes needed)
+        template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type * = nullptr>
+        static std::vector<std::vector<T>> all_gather_arrays_by_rank(
+            const T* data_from_this_proc,
+            const int n_data_from_this_proc,
+            const bool use_local_comm = true);
 
         template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
         static T sum_across_ranks(const T & value, const bool use_local_comm = true);
@@ -183,7 +207,7 @@ namespace utility
 
     inline void MPIUtils::init(int* argc, char*** argv, const int group_key, const bool quiet)
     {
-#ifndef USE_MPI
+#ifndef HAVE_MPI
         return;
 #else
         MPIUtilsState& state = get_state();
@@ -284,7 +308,7 @@ namespace utility
 
     inline void MPIUtils::barrier(const bool use_local_comm)
     {
-#ifdef USE_MPI
+#ifdef HAVE_MPI
         VERIFY_INIT("barrier");
         // Select which comm to use for all MPI operations in this call
         MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
@@ -295,7 +319,7 @@ namespace utility
     template<typename T, typename std::enable_if<!std::is_fundamental<T>::value, T>::type*>
     inline void MPIUtils::update_from_root(T& obj_on_this_proc, const bool use_local_comm)
     {
-#ifdef USE_MPI
+#ifdef HAVE_MPI
         const MPIUtilsState& state = get_state();
         if (!state.initialized)
         {
@@ -342,7 +366,7 @@ namespace utility
     template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
     inline std::vector<T> MPIUtils::gather_vectors(const std::vector<T>& data_from_this_proc, const bool use_local_comm)
     {
-#ifdef USE_MPI
+#ifdef HAVE_MPI
         VERIFY_INIT("gather_vectors");
 
         // Select which comm to use for all MPI operations in this call
@@ -412,7 +436,7 @@ namespace utility
     template<typename T, typename std::enable_if<!std::is_fundamental<T>::value, T>::type*>
     inline std::vector<T> MPIUtils::gather_vectors(const std::vector<T>& data_from_this_proc, const bool use_local_comm)
     {
-#ifdef USE_MPI
+#ifdef HAVE_MPI
         const MPIUtilsState& state = get_state();
         if (!state.initialized)
         {
@@ -477,9 +501,12 @@ namespace utility
     }
 
     template <typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
-    inline std::vector<T> MPIUtils::all_gather_vectors(const std::vector<T>& data_from_this_proc, const bool use_local_comm)
+    inline std::vector<T> utility::MPIUtils::all_gather_arrays(
+        const T* data_from_this_proc,
+        const int n_data_from_this_proc,
+        const bool use_local_comm)
     {
-#ifdef USE_MPI
+#ifdef HAVE_MPI
         const MPIUtilsState& state = get_state();
         if (!state.initialized)
         {
@@ -495,7 +522,7 @@ namespace utility
         MPI_Comm_rank(comm, &comm_rank);
 
         const int size_of_type = sizeof(T);
-        const int num_values_for_this_proc = static_cast<int>(data_from_this_proc.size());
+        const int num_values_for_this_proc = n_data_from_this_proc;
         const int num_bytes_for_this_proc = num_values_for_this_proc * size_of_type;
 
         // Figure out the size of the data on each rank that will be communciated
@@ -531,6 +558,19 @@ namespace utility
 
         return recv_buffer;
 #else
+        return std::vector<T>(data_from_this_proc, data_from_this_proc + n_data_from_this_proc);
+#endif
+    }
+
+    template <typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
+    inline std::vector<T> MPIUtils::all_gather_vectors(const std::vector<T>& data_from_this_proc, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        return all_gather_array(
+            &data_from_this_proc[0],
+            static_cast<int>(data_from_this_proc.size()),
+            use_local_comm);
+#else
         return data_from_this_proc;
 #endif
     }
@@ -538,7 +578,7 @@ namespace utility
     template<typename T, typename std::enable_if<!std::is_fundamental<T>::value, T>::type*>
     inline std::vector<T> MPIUtils::all_gather_vectors(const std::vector<T>& data_from_this_proc, const bool use_local_comm)
     {
-#ifdef USE_MPI
+#ifdef HAVE_MPI
         const MPIUtilsState& state = get_state();
         if (!state.initialized)
         {
@@ -592,10 +632,81 @@ namespace utility
 #endif
     }
 
+    template <typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
+    inline std::vector<std::vector<T>> utility::MPIUtils::all_gather_arrays_by_rank(
+        const T* data_from_this_proc,
+        const int n_data_from_this_proc,
+        const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        const MPIUtilsState& state = get_state();
+        if (!state.initialized)
+        {
+            throw _EXCEPTION("An mpi call was called in fea_io before fea_io::MPIUtils::init was called.  Be sure to call init() early.");
+        }
+
+        // Select which comm to use for all MPI operations in this call
+        MPI_Comm comm = use_local_comm ? state.local_comm : MPI_COMM_WORLD;
+        // Get information about the MPI communicator
+        int comm_size;
+        MPI_Comm_size(comm, &comm_size);
+        int comm_rank;
+        MPI_Comm_rank(comm, &comm_rank);
+
+        const int size_of_type = sizeof(T);
+        const int num_values_for_this_proc = n_data_from_this_proc;
+        const int num_bytes_for_this_proc = num_values_for_this_proc * size_of_type;
+
+        // Figure out the size of the data on each rank that will be communciated
+        std::vector<int> num_values_for_each_proc(comm_size);
+        MPI_Gather(&num_values_for_this_proc, 1, MPI_INT,
+            &num_values_for_each_proc[0], 1, MPI_INT,
+            0, comm);
+
+        // Compute the number of bytes to expect from each rank and
+        // the offset in the buffer for each rank.
+        std::vector<int> recv_counts(comm_size);
+        std::vector<int> recv_offsets(comm_size + 1);
+        int offset = 0;
+        for (auto i = 0; i < comm_size; i++)
+        {
+            recv_counts[i] = num_values_for_each_proc[i] * size_of_type;
+            recv_offsets[i] = offset;
+            offset += recv_counts[i];
+        }
+        recv_offsets.back() = offset;
+
+        // Allocate a buffer to put the data in
+        int num_total_values_needed = 0;
+        for (auto num_values : num_values_for_each_proc)
+            num_total_values_needed += num_values;
+        std::vector<T> recv_buffer(num_total_values_needed);
+
+        // Note: num_bytes_for_this_proc, recv_counts, and recv_offsets must all be
+        // in terms of the bytes (not number of values)
+        MPI_Allgatherv(&data_from_this_proc[0], num_bytes_for_this_proc, MPI_CHAR,
+            &recv_buffer[0], &recv_counts[0], &recv_offsets[0], MPI_CHAR,
+            comm);
+
+        std::vector<std::vector<T>> recv_by_rank(comm_size);
+        for (auto i = 0; i < comm_size; i++)
+        {
+            recv_by_rank[i].resize(recv_counts[i]);
+            std::copy(recv_buffer[recv_offsets[i]], // begin to copy
+                recv_buffer[recv_offsets[i + 1]], // end to copy
+                &recv_by_rank[i][0]); // destination
+        }
+
+        return recv_by_rank;
+#else
+        return { std::vector<T>(data_from_this_proc, data_from_this_proc + n_data_from_this_proc) };
+#endif
+    }
+
     template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
     inline T MPIUtils::sum_across_ranks(const T& value, const bool use_local_comm)
     {
-#ifdef USE_MPI
+#ifdef HAVE_MPI
         VERIFY_INIT("sum_across_ranks");
         // TODO implement
 #else
@@ -606,7 +717,7 @@ namespace utility
     template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
     inline void MPIUtils::send_to_group(const std::vector<T> data, int target_group_key)
     {
-#ifdef USE_MPI
+#ifdef HAVE_MPI
         VERIFY_INIT("send_to_group");
         const MPIUtilsState& state = get_state();
         // Only let the local root send information
@@ -624,7 +735,7 @@ namespace utility
     template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
     inline void MPIUtils::receive_from_group(std::vector<T>& data, int target_group_key)
     {
-#ifdef USE_MPI
+#ifdef HAVE_MPI
         VERIFY_INIT("receive_from_group");
         const MPIUtilsState& state = get_state();
         // Only let the local root send information
@@ -650,7 +761,7 @@ namespace utility
 
     inline const int MPIUtils::get_num_local_ranks()
     {
-#ifdef USE_MPI
+#ifdef HAVE_MPI
         VERIFY_INIT("get_num_local_ranks");
         int comm_size;
         MPI_Comm_size(get_state().local_comm, &comm_size);
@@ -662,7 +773,7 @@ namespace utility
 
     inline void MPIUtils::finalize()
     {
-#ifdef USE_MPI
+#ifdef HAVE_MPI
         VERIFY_INIT("finalize");
         get_state().reset();
 
