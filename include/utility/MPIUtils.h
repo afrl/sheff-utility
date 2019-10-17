@@ -566,7 +566,7 @@ namespace utility
     inline std::vector<T> MPIUtils::all_gather_vectors(const std::vector<T>& data_from_this_proc, const bool use_local_comm)
     {
 #ifdef HAVE_MPI
-        return all_gather_array(
+        return all_gather_arrays(
             &data_from_this_proc[0],
             static_cast<int>(data_from_this_proc.size()),
             use_local_comm);
