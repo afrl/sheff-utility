@@ -77,7 +77,7 @@ else()
   if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
       target_link_libraries( utility PUBLIC libstdc++fs.a )
   endif()
-  if ($MSVC)
+  if (MSVC)
       # This is to silence the error that MS will remove <experimental/filesystem> and replace
       # it with <filesystem>
       target_compile_definitions(utility PUBLIC _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING)
