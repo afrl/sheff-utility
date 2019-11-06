@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Exceptions.h"
+#include <nlohmann/json.hpp>
 
 #ifdef HAVE_MPI
 #    include <mpi.h>
@@ -14,6 +15,8 @@
 #define _EXCEPTION(m) _UTIL_MSG_EXCEPT(m)
 namespace utility
 {
+    using json = nlohmann::json;
+
     /// This describes all the variables needed for the MPIUtils.
     /// One instance of this will be created for MPIUtils as a static variable.
     struct MPIUtilsState
@@ -148,6 +151,9 @@ namespace utility
 
         template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
         static T sum_across_ranks(const T & value, const bool use_local_comm = true);
+
+        template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type * = nullptr>
+        static T max_across_ranks(const T& value, const bool use_local_comm = true);
 
         /// Sends data from root of one group to the root of another group.  This allows
         /// two programs to communicate with each other using this interface.
@@ -659,9 +665,9 @@ namespace utility
 
         // Figure out the size of the data on each rank that will be communciated
         std::vector<int> num_values_for_each_proc(comm_size);
-        MPI_Gather(&num_values_for_this_proc, 1, MPI_INT,
+        MPI_Allgather(&num_values_for_this_proc, 1, MPI_INT,
             &num_values_for_each_proc[0], 1, MPI_INT,
-            0, comm);
+            comm);
 
         // Compute the number of bytes to expect from each rank and
         // the offset in the buffer for each rank.
@@ -684,17 +690,21 @@ namespace utility
 
         // Note: num_bytes_for_this_proc, recv_counts, and recv_offsets must all be
         // in terms of the bytes (not number of values)
-        MPI_Allgatherv(&data_from_this_proc[0], num_bytes_for_this_proc, MPI_CHAR,
-            &recv_buffer[0], &recv_counts[0], &recv_offsets[0], MPI_CHAR,
+        MPI_Allgatherv(data_from_this_proc, num_bytes_for_this_proc, MPI_CHAR,
+            recv_buffer.data(), &recv_counts[0], &recv_offsets[0], MPI_CHAR,
             comm);
 
         std::vector<std::vector<T>> recv_by_rank(comm_size);
         for (auto i = 0; i < comm_size; i++)
         {
             recv_by_rank[i].resize(recv_counts[i]);
-            std::copy(recv_buffer[recv_offsets[i]], // begin to copy
-                recv_buffer[recv_offsets[i + 1]], // end to copy
-                &recv_by_rank[i][0]); // destination
+            if (recv_counts[i] > 0)
+            {
+                for (auto j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
+                {
+                    recv_by_rank[i][j - recv_offsets[i]] = recv_buffer[j];
+                }
+            }
         }
 
         return recv_by_rank;
@@ -708,7 +718,30 @@ namespace utility
     {
 #ifdef HAVE_MPI
         VERIFY_INIT("sum_across_ranks");
-        // TODO implement
+
+        // Select which comm to use for all MPI operations in this call
+        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
+
+        T max_value;
+        MPI_Allreduce(&value, &max_value, sizeof(T), MPI_CHAR, MPI_SUM, comm);
+        return max_value;
+#else
+        return value;
+#endif
+    }
+
+    template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
+    inline T MPIUtils::max_across_ranks(const T& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("max_across_ranks");
+
+        // Select which comm to use for all MPI operations in this call
+        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
+        
+        T max_value;
+        MPI_Allreduce(&value, &max_value, sizeof(T), MPI_CHAR, MPI_MAX, comm);
+        return max_value;
 #else
         return value;
 #endif

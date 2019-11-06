@@ -36,6 +36,13 @@ include(${CMAKE_SOURCE_DIR}/cmake/CommonInputChecks.cmake)
 
 
 find_package(SecondPartyMath CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../second_party_math/build" "${CMAKE_SOURCE_DIR}/../second_party_math/install_dir")
+find_package( nlohmann_json 3.2.0 CONFIG REQUIRED
+              HINTS "${CMAKE_SOURCE_DIR}/../third_party/json_build" "${CMAKE_SOURCE_DIR}/../json_build"
+                    "${CMAKE_SOURCE_DIR}/../third_party/json_install_dir" "${CMAKE_SOURCE_DIR}/../json_install_dir"
+                    "${CMAKE_SOURCE_DIR}/../third_party/json/build" "${CMAKE_SOURCE_DIR}/../json/build"
+                    "${CMAKE_SOURCE_DIR}/../third_party/json/install_dir" "${CMAKE_SOURCE_DIR}/../json/install_dir"
+)
+
 
 if( UTILITY_USE_MPI )
     find_package( MPI REQUIRED )
@@ -86,6 +93,8 @@ endif()
 
 # Link dependencies
 target_link_libraries(utility PUBLIC SecondPartyMath::SecondPartyMath)
+target_link_libraries(utility INTERFACE nlohmann_json::nlohmann_json)
+
 
 if(UTILITY_USE_MPI AND MPI_FOUND)
     target_compile_definitions(utility PUBLIC HAVE_MPI)

@@ -41,12 +41,12 @@ namespace utility
     inline bool VectorSet<T>::insert(const T & val)
     {
         for (const T& i : v)
+        {
+            if (val == i)
             {
-                if (val == i)
-                    {
-                        return false;
-                    }
+                return false;
             }
+        }
         v.push_back(val);
         return true;
     }

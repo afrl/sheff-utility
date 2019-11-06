@@ -27,12 +27,15 @@ namespace utility
         }
     };
 
+    // Theoretically, the XOR order shouldn't matter, but we can ensure consistency by 
+    // sorting first. 
+    // NOTE: This will cause an error if the types you want to compare aren't compatible.
     struct hash_sorted {
     public:
         template <typename T, typename U>
         std::size_t operator()(const std::pair<T, U>& x) const
         {
-            return utility::hash(x.first, x.second);
+            return utility::hash_sorted()(x.first, x.second);
         }
 
         template <typename T, typename U>

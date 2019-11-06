@@ -53,6 +53,10 @@ namespace utility
 #    define _UTIL_ASSERT_C(x, m) if (!(x)) { throw _UTIL_MSG_EXCEPT_C(m); }
 #endif
 
+// Assertion that a statement throws a utility::MsgException
+namespace utility { class MsgException; }
+#define _UTIL_ASSERT_THROW(x) try { x; throw; } catch (const utility::MsgException &) {} catch (...) { throw; }
+
 #define _UTIL_WARN(m) std::cerr << utility::build_warning_msg(__FILE__, "", __func__, __LINE__, m) << std::endl;
 #define _UTIL_WARN_C(m) std::cerr << utility::build_warning_msg(__FILE__, typeid(*this).name(), __func__, __LINE__, m) << std::endl;
 
