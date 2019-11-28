@@ -15,14 +15,13 @@ message(STATUS $ENV{I_MPI_ROOT})
 
 
 # Options
-option( UTILITY_BuildDev          "Build the project in the dev folder. (intended for debugging this project by devs)" OFF )
 option( UTILITY_BuildTests        "Build the unit tests." OFF )
 option( UTILITY_USE_MPI "Indicates if the MPI routines should be included in the build." OFF )
 option( UTILITY_UseFilesystemHack "Use if compiler has included <experimental/filesystem>" OFF )
 
 # For debugging, print generator, compiler, and options
 message( STATUS "Gen: ${CMAKE_GENERATOR}, CXX: ${CMAKE_CXX_COMPILER_ID}, Mode: ${CMAKE_BUILD_TYPE}" )
-message( STATUS "Dev: ${UTILITY_BuildDev}, Tests: ${UTILITY_BuildTests}, FS HACK: ${UTILITY_UseFilesystemHack}" )
+message( STATUS "Tests: ${UTILITY_BuildTests}, FS HACK: ${UTILITY_UseFilesystemHack}" )
 
 ##################
 # Checking input #
@@ -114,11 +113,6 @@ assign_source_group_SecondPartyMath()
 # Add dev and unit test targets #
 #################################
 
-# Build dev
-if(UTILITY_BuildDev)
-    add_subdirectory(dev)
-endif()
-    
 # Build tests
 if(UTILITY_BuildTests)
     include(CTest)
