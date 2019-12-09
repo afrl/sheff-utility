@@ -49,9 +49,9 @@ namespace utility
 		/// Note: this points just beyond the array.  DO NOT use any methods.  Only use to test iterator.
 		T * const end() const;
 		/// Returns the first node in the connectivity list
-		T front() const;
+		T& front() const;
 		/// Returns the last node in the connectivity list
-		T back() const;
+		T& back() const;
 		/// Returns the size of the container
 		const SizeType& size() const;
 
@@ -235,13 +235,13 @@ namespace utility
 	}
 
 	template<typename T, typename SizeType>
-	inline T DynamicArray<T, SizeType>::front() const
+	inline T& DynamicArray<T, SizeType>::front() const
 	{
 		return objects_[0];
 	}
 
 	template<typename T, typename SizeType>
-	inline T DynamicArray<T, SizeType>::back() const
+	inline T& DynamicArray<T, SizeType>::back() const
 	{
 		return objects_[size_ - 1];
 	}
@@ -368,10 +368,16 @@ namespace utility
 	{
 		assert(objects.size() < std::numeric_limits<SizeType>::max());
         cleanup_if_needed(objects_, size_);
-		this->objects_ = allocator_.allocate(objects.size());
-		this->size_ = static_cast<SizeType>(objects.size());
-		std::copy(objects.begin(), objects.end(), stdext::checked_array_iterator<T*>(this->objects_, this->size_));
-		return *this;
+
+        objects_ = allocator_.allocate(objects.size());
+        size_ = static_cast<SizeType>(objects.size());
+        // Note: copy requires =operator, so we will use copy constructor instead
+        SizeType i = 0;
+        for (auto obj : objects)
+        {
+            allocator_.construct(&objects_[i++], obj);
+        }
+        return *this;
 	}
 
 	template<typename T, typename SizeType>
@@ -393,10 +399,16 @@ namespace utility
 	inline DynamicArray<T, SizeType> & DynamicArray<T, SizeType>::operator=(const DynamicArray & other)
 	{
         cleanup_if_needed(objects_, size_);
-		this->objects_ = allocator_.allocate(other.size());
-		this->size_ = other.size_;
-		std::copy(&other.objects_[0], &other.objects_[other.size_], stdext::checked_array_iterator<T*>(this->objects_, this->size_));
-		return *this;
+
+        objects_ = allocator_.allocate(other.size_);
+        size_ = other.size_;
+        // Note: copy requires =operator, so we will use copy constructor instead
+        SizeType i = 0;
+        for (auto obj : other)
+        {
+            allocator_.construct(&objects_[i++], obj);
+        }
+        return *this;
 	}
 
 	template<typename T, typename SizeType>
