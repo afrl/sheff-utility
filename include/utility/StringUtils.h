@@ -9,6 +9,12 @@ namespace utility
 	void str_to_upper(std::string& s);
 	/// Transforms a string to lower case
 	void str_to_lower(std::string& s);
+    /// Left trim a string (remove leading spaces) 
+    std::string ltrim( const std::string & s );
+    /// Right trim a string (remove trailing spaces) 
+    std::string rtrim( const std::string & s );
+    /// Trim a string (remove leading and trailing spaces) 
+    std::string trim( const std::string & s ); 
 	/// Performs a case-insensitive string comparison
 	bool istr_is_equal(const std::string &s1, const std::string &s2);
 	/// Determines if a string is a number

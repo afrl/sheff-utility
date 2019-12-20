@@ -25,6 +25,26 @@ namespace utility
         std::transform(s.begin(), s.end(), s.begin(), (int(*)(int))::tolower);
     }
 
+    std::string ltrim( const std::string & s )
+    {
+        std::string t = s; 
+        t.erase( t.begin(), find_if_not( t.begin(), t.end(), [](int c){ return isspace(c); } ) );
+        return t;
+    }
+
+    std::string rtrim( const std::string & s )
+    {
+        std::string t = s; 
+        t.erase( find_if_not( t.rbegin(), t.rend(), [](int c){ return isspace( c ); } ).base(), t.end() );
+        return t;
+    }
+
+    std::string trim( const std::string & s )
+    {
+        return ltrim( rtrim( s ) );
+    }
+
+
     bool istr_is_equal(const std::string & s1, const std::string & s2)
     {
         return _ISTR_COMPARE(s1.c_str(), s2.c_str()) == 0;
@@ -32,9 +52,9 @@ namespace utility
 
     bool is_number(const std::string& s)
     {
-        std::string::const_iterator it = s.begin();
-        while (it != s.end() && ::isdigit(*it)) ++it;
-        return !s.empty() && it == s.end();
+        char* p; 
+        strtod(s.c_str(), &p); 
+        return *p == 0; 
     }
 
     std::vector<std::string> tokenize(const std::string & s)

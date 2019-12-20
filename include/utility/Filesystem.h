@@ -233,9 +233,9 @@ namespace filesystem {
 
     private: 
 #ifdef _GLIBCXX_FILESYSTEM_IS_WINDOWS 
-        static const char path::separator = '\\';
+        static const char separator = '\\';
 #else
-        static const char path::separator = '/';
+        static const char separator = '/';
 #endif
   
         std::string _pathname; 
