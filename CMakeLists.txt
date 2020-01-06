@@ -82,6 +82,9 @@ else()
   target_compile_definitions(utility PUBLIC HAVE_FILESYSTEM )
   if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
       target_link_libraries( utility PUBLIC libstdc++fs.a )
+  elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel" )
+      # Trying the same thing with Intel, linked against newer GCC libs, but no luck
+      target_link_libraries( utility PUBLIC libstdc++fs.a )
   endif()
   if (MSVC)
       # This is to silence the error that MS will remove <experimental/filesystem> and replace

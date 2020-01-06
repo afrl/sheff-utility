@@ -27,8 +27,7 @@
 #include <stdio.h> // defines FILENAME_MAX
 #include <string> 
 
-// TODO: If on Windows, could also check if have high
-// enough version to include experimental/filesystem directly.
+// Platform-independent way to get current dir
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #    define _GLIBCXX_FILESYSTEM_IS_WINDOWS 1
 #    include <direct.h>

@@ -2,14 +2,9 @@
 
 #include<iostream>
 
-#ifdef HAVE_FILESYSTEM
-#    include <experimental/filesystem>
-#else
-#    include "utility/Filesystem.h"
-#endif
+#include "utility/Filesystem.h"
 
 using namespace std; 
-namespace fs = std::experimental::filesystem;
 
 int main()
 {
@@ -94,7 +89,7 @@ int main()
   cout << "   " << win_path << " = " << win_path.string() << endl; 
 
 #endif
-
   
+
   return 0; 
 }
