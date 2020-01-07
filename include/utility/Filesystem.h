@@ -1,4 +1,3 @@
-#pragma once
 /** Duplicates some of the main functionality from C++17's 
  * <experimental/filesystem> which is not available on most of
  * our current Linux compilers. Partially taken from GNU's 8.2.0
@@ -6,6 +5,8 @@
  * and from testing results with that compiler and with VS 2017. 
  */
 
+#ifndef UTIL_FILESYSTEM_H
+#define UTIL_FILESYSTEM_H
 
 #ifdef HAVE_FILESYSTEM
 
@@ -57,7 +58,7 @@ namespace filesystem {
             _pathname(__p._pathname) 
         { }
 
-        path (const std::string __s)
+        path (const std::string& __s)
             :
             _pathname(__s)
         { } 
@@ -84,7 +85,7 @@ namespace filesystem {
         // In both VS and GNU, if original path does not end in a separator,
         // and append path does not start with a separator, then a separator
         // is added. Otherwise, paths are just concatenated.
-        path& append_path(const std::string& __s)
+        inline path& append_path(const std::string& __s)
         {
             if ((_pathname.at(_pathname.size()-1) != separator) &&
                 (__s.at(0) != separator))
@@ -96,7 +97,7 @@ namespace filesystem {
         }
 
         // Append string to path
-        inline path& operator/=(const std::string __s) 
+        inline path& operator/=(const std::string& __s) 
         {
             return(append_path(__s)); 
         }
@@ -114,11 +115,33 @@ namespace filesystem {
             return (__result /= __rhs); 
         }
     
+        // Join a path and a string
+        inline path operator/(const std::string& __s)
+        {
+            path __result(*this); 
+            return (__result /= __s); 
+        }
+
+        // Compare path to string
+        inline bool operator==(const std::string& __s)
+        {
+            path __result(*this); 
+            return(__result.string() == __s); 
+        }
+
+        // Compare path to string
+        inline bool operator!=(const std::string& __s)
+        {
+            path __result(*this); 
+            return(__result.string() != __s); 
+        }
+
+    
         // Return path as a string
-        std::string string() const {return _pathname;} 
+        inline std::string string() const {return _pathname;} 
 
         // Same thing for generic_string
-        std::string generic_string() const {return _pathname;} 
+        inline std::string generic_string() const {return _pathname;} 
 
         // Write a path to a stream. Note in GNU implementation that this 
         // adds quotes around the path.
@@ -131,7 +154,7 @@ namespace filesystem {
         // if the path ends in a separator, then the filename returned is ".". Otherwise, 
         // the filename is everything after the last separator. Special cases if path is root: 
         // C:\ returns \ and for Linux / returns /. 
-        path filename() const
+        inline path filename() const
         {
             if (_pathname.size() <= 1) // typically just the separator
                 return path(_pathname); 
@@ -157,7 +180,7 @@ namespace filesystem {
         // and / returns "". A path without separators returns "". 
         // Thus, for Windows: C:\file -> C:\ -> C: -> ""
         //       for Linux:   /home/file/ -> /home/file -> /home -> / -> ""
-        path parent_path() const
+        inline path parent_path() const
         {
             std::string parent = _pathname; 
 
@@ -215,7 +238,7 @@ namespace filesystem {
 
 
         // Return true if absolute
-        bool is_absolute() const
+        inline bool is_absolute() const
         {
 #ifdef _GLIBCXX_FILESYSTEM_IS_WINDOWS 
             if ( (_pathname.size() > 1) && (_pathname[1] == ':') )
@@ -230,7 +253,7 @@ namespace filesystem {
 
         // Check if path has extension. Note if you have a separator after a period,
         // this is not counted as an extension.
-        bool has_extension() const
+        inline bool has_extension() const
         {
             int ext_pos = _pathname.find_last_of('.'); 
             int sep_pos = _pathname.find_last_of(separator); 
@@ -242,7 +265,7 @@ namespace filesystem {
 
 
         // Get the extension of the path. If none, return "".
-        path extension() const
+        inline path extension() const
         {
             int ext_pos = _pathname.find_last_of('.'); 
             int sep_pos = _pathname.find_last_of(separator); 
@@ -253,7 +276,7 @@ namespace filesystem {
         }
 
         // For GCC and MSVC, both replaces and returns
-        path replace_extension(const std::string& new_ext)
+        inline path replace_extension(const std::string& new_ext)
         {
             int ext_pos = _pathname.find_last_of('.'); 
             int sep_pos = _pathname.find_last_of(separator); 
@@ -297,7 +320,7 @@ namespace filesystem {
     // Get the absolute value of the path. Note that in both MSVC 
     // and GNU, this returns the given path if already absolute, 
     // including if first character is the path separator. 
-    path absolute(const path &given)
+    static path absolute(const path &given)
     {
         if (given.is_absolute())
             return path(given.string());
@@ -307,14 +330,14 @@ namespace filesystem {
 
 
     // Return true if path exists
-    bool exists(const path& given)
+    static bool exists(const path& given)
     {
         struct stat buffer;
         return (stat (given.string().c_str(), &buffer) == 0); 
     }
 
     // Return true if exists and a dir
-    bool is_directory(const path& given)
+    static bool is_directory(const path& given)
     {
         struct stat buffer;
         int status = stat (given.string().c_str(), &buffer); 
@@ -322,30 +345,12 @@ namespace filesystem {
     }
 
     // Create a new directory with standard permissions
-    void create_directory(const path& given)
+    static void create_directory(const path& given)
     {
         mkdir(given.string().c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     }
 
 
-    // Compare path to string
-    bool operator==(const path& a, const std::string& b)
-    {
-        return(a.string() == b); 
-    }
-
-    // Compare path to string
-    bool operator!=(const path& a, const std::string& b)
-    {
-        return(a.string() != b); 
-    }
-
-    // Join a path and a string
-    path operator/(const path& a, const std::string& b)
-    {
-        path c(a); 
-        return c.append_path(b); 
-    }
 
 
 } } } // end namespaces
@@ -353,3 +358,5 @@ namespace filesystem {
 namespace fs = std::experimental::filesystem;
 
 #endif // End #ifdef HAVE_FILESYSTEM
+
+#endif // UTIL_FILESYSTEM_H
