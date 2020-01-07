@@ -258,9 +258,9 @@ namespace filesystem {
             int ext_pos = _pathname.find_last_of('.'); 
             int sep_pos = _pathname.find_last_of(separator); 
             if (ext_pos <= sep_pos)
-                return 0;
+                return false;
             else 
-                return 1; 
+                return true; 
         }
 
 
