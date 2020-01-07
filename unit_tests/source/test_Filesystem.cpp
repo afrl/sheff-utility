@@ -30,6 +30,7 @@ int main()
   fs::path full = app / pabs / rel / ext / invalid / fin;
   cout << "   " << full << endl;
 
+
   // Test breaking up into parent path, filename, and extension
   cout << "3. parent, filename, & ext: " << endl;
   fs::path tmp = full;
@@ -47,7 +48,15 @@ int main()
   cout << "        = " << tmp.parent_path() << " + " << tmp.filename();
   cout << endl; 
 
-  cout << "4. Test wrong-platform path" << endl; 
+  cout << "4. Test assign from string, exists, is dir/abs, abs: " << endl; 
+  tmp = "test.txt"; 
+  cout << "   exists: " << fs::exists(tmp) << endl; 
+  cout << "   is dir: " << fs::is_directory(tmp) << endl; 
+  cout << "   is abs: " << tmp.is_absolute() << endl; 
+  cout << "   abs   : " << fs::absolute(tmp) << endl; 
+  cout << endl; 
+
+  cout << "5. Test wrong-platform path" << endl; 
   fs::path linux_path("/home/jdoe/test.txt"); 
   cout << "   " << linux_path << " = " << linux_path.string() << endl; 
 
@@ -84,7 +93,15 @@ int main()
   cout << "        = " << tmp.parent_path() << " + " << tmp.filename();
   cout << endl; 
 
-  cout << "4. Test wrong-platform path" << endl; 
+  cout << "4. Test assign from string, exists, is dir/abs, abs: " << endl; 
+  tmp = "test.txt"; 
+  cout << "   exists: " << fs::exists(tmp) << endl; 
+  cout << "   is dir: " << fs::is_directory(tmp) << endl; 
+  cout << "   is abs: " << tmp.is_absolute() << endl; 
+  cout << "   abs   : " << fs::absolute(tmp) << endl; 
+  cout << endl; 
+
+  cout << "5. Test wrong-platform path" << endl; 
   fs::path win_path("C:\\Users\\jdoe\\test.txt"); 
   cout << "   " << win_path << " = " << win_path.string() << endl; 
 

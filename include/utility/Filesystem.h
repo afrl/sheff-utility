@@ -2,9 +2,10 @@
 /** Duplicates some of the main functionality from C++17's 
  * <experimental/filesystem> which is not available on most of
  * our current Linux compilers. Partially taken from GNU's 8.2.0
- * implementation and from testing results with that compiler
- * and with VS 2017. 
+ * implementation (gcc-8.2.0/libstdc++-v3/include/experimental) 
+ * and from testing results with that compiler and with VS 2017. 
  */
+
 
 #ifdef HAVE_FILESYSTEM
 
@@ -24,8 +25,9 @@
 #else
 
 #include <iostream>
-#include <stdio.h> // defines FILENAME_MAX
+#include <stdio.h>    // defines FILENAME_MAX
 #include <string> 
+#include <sys/stat.h> // provides stat and mkdir
 
 // Platform-independent way to get current dir
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -62,23 +64,26 @@ namespace filesystem {
 
         ~path() = default; 
 
-        // Update path from string 
-        inline path& operator=(const std::string __s) noexcept
+
+        // Construct or update path from a string. Update also works for const char*.
+        inline path& operator=(const std::string& __s) noexcept
         {
             _pathname = __s; 
             return *this; 
         }
 
-        // Copy path from another path
+        // Construct or update path from another path
         inline path& operator=(const path& __p) noexcept
         {
             _pathname = __p._pathname; 
             return *this; 
         }
 
+
         // Append string to path, with correct path separators.
-        // In both VS and GNU, if original path does not end in a separator and append path does not start 
-        // with a separator, then a separator is added. Otherwise, paths are just concatenated.
+        // In both VS and GNU, if original path does not end in a separator,
+        // and append path does not start with a separator, then a separator
+        // is added. Otherwise, paths are just concatenated.
         path& append_path(const std::string& __s)
         {
             if ((_pathname.at(_pathname.size()-1) != separator) &&
@@ -112,6 +117,9 @@ namespace filesystem {
         // Return path as a string
         std::string string() const {return _pathname;} 
 
+        // Same thing for generic_string
+        std::string generic_string() const {return _pathname;} 
+
         // Write a path to a stream. Note in GNU implementation that this 
         // adds quotes around the path.
         friend std::ostream& operator<<(std::ostream& __os, const path& __p)
@@ -121,8 +129,8 @@ namespace filesystem {
 
         // Get just the filename (stripped of dir info) for the path. In both VS and GNU,
         // if the path ends in a separator, then the filename returned is ".". Otherwise, 
-        // the filename is everything after the last separator. Special case if path is root, 
-        // so C:\ returns \ and for Linux / returns /. 
+        // the filename is everything after the last separator. Special cases if path is root: 
+        // C:\ returns \ and for Linux / returns /. 
         path filename() const
         {
             if (_pathname.size() <= 1) // typically just the separator
@@ -132,14 +140,14 @@ namespace filesystem {
 
             // If separator at end, check for root, otherwise return "."
             if (pos == _pathname.size()-1) 
-                {
-                    if ((_pathname.size() == 3) && (_pathname.at(1) == ':'))
-                        return path(_pathname.substr(2));
-                    else if (_pathname.size() == 1) 
-                        return path(_pathname); 
-                    else
-                        return path("."); 
-                }
+            {
+                if ((_pathname.size() == 3) && (_pathname.at(1) == ':'))
+                    return path(_pathname.substr(2));
+                else if (_pathname.size() == 1) 
+                    return path(_pathname); 
+                else
+                    return path("."); 
+            }
             else
                 return path(_pathname.substr(pos+1,_pathname.size())); 
         }
@@ -153,41 +161,41 @@ namespace filesystem {
         {
             std::string parent = _pathname; 
 
-            // Note that both VS and GNU implementations get rid of any double separators in the parent path
+            // Note that both VS and GNU implementations get rid of any 
+            // double separators in the parent path
             int pos = 1; 
             std::string seps(2,separator);  
             while (pos != -1)
-                {
-                    pos = parent.find(seps);
-                    if (pos != -1)
-                        parent.erase(pos,1); 
-                }
+            {
+                pos = parent.find(seps);
+                if (pos != -1)
+                    parent.erase(pos,1); 
+            }
 
 #ifdef _GLIBCXX_FILESYSTEM_IS_WINDOWS 
 
             // VS implementation additionally changes internal :\ to :
             pos = 1; 
             while (pos != -1)
+            {
+                if (parent.size() > 3)
                 {
-                    if (parent.size() > 3)
-                        {
-                            pos = parent.substr(3).find(":\\");
-                            if (pos != -1)
-                                parent.erase(pos+4,1); 
-                        }
-                    else
-                        pos = -1;
+                    pos = parent.substr(3).find(":\\");
+                    if (pos != -1)
+                        parent.erase(pos+4,1); 
                 }
+                else
+                    pos = -1;
+            }
         
-
             pos = parent.find_last_of(separator); 
             if (pos == 2)
-                {
-                    if (parent.size() > 3) 
-                        return path(parent.substr(0,3));
-                    else 
-                        return path(parent.substr(0,2)); 
-                }
+            {
+                if (parent.size() > 3) 
+                    return path(parent.substr(0,3));
+                else 
+                    return path(parent.substr(0,2)); 
+            }
             else if (pos == -1) 
                 return path(""); 
             else
@@ -206,7 +214,22 @@ namespace filesystem {
         }
 
 
-        // Check if path has extension. Note if you have a separator after a period, this is not counted as an extension.
+        // Return true if absolute
+        bool is_absolute() const
+        {
+#ifdef _GLIBCXX_FILESYSTEM_IS_WINDOWS 
+            if ( (_pathname.size() > 1) && (_pathname[1] == ':') )
+                return true;
+#endif
+            if ( (_pathname.size() > 0) && (_pathname[0] == separator) )
+                return true;
+            else
+                return false; 
+        }
+
+
+        // Check if path has extension. Note if you have a separator after a period,
+        // this is not counted as an extension.
         bool has_extension() const
         {
             int ext_pos = _pathname.find_last_of('.'); 
@@ -228,6 +251,21 @@ namespace filesystem {
             else 
                 return path(_pathname.substr(ext_pos,_pathname.size())); 
         }
+
+        // For GCC and MSVC, both replaces and returns
+        path replace_extension(const std::string& new_ext)
+        {
+            int ext_pos = _pathname.find_last_of('.'); 
+            int sep_pos = _pathname.find_last_of(separator); 
+            if (ext_pos <= sep_pos)
+                return path(_pathname);
+            else {
+                _pathname = _pathname.substr(0,ext_pos) + new_ext;  
+                return path(_pathname);
+            }
+            
+        }
+
 
 
     private: 
@@ -254,6 +292,61 @@ namespace filesystem {
         std::string cwd_str(cwd);
         return path(cwd_str);
     };
+
+
+    // Get the absolute value of the path. Note that in both MSVC 
+    // and GNU, this returns the given path if already absolute, 
+    // including if first character is the path separator. 
+    path absolute(const path &given)
+    {
+        if (given.is_absolute())
+            return path(given.string());
+        else
+            return current_path() / given;
+    };
+
+
+    // Return true if path exists
+    bool exists(const path& given)
+    {
+        struct stat buffer;
+        return (stat (given.string().c_str(), &buffer) == 0); 
+    }
+
+    // Return true if exists and a dir
+    bool is_directory(const path& given)
+    {
+        struct stat buffer;
+        int status = stat (given.string().c_str(), &buffer); 
+        return S_ISDIR(buffer.st_mode);  
+    }
+
+    // Create a new directory with standard permissions
+    void create_directory(const path& given)
+    {
+        mkdir(given.string().c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
+    }
+
+
+    // Compare path to string
+    bool operator==(const path& a, const std::string& b)
+    {
+        return(a.string() == b); 
+    }
+
+    // Compare path to string
+    bool operator!=(const path& a, const std::string& b)
+    {
+        return(a.string() != b); 
+    }
+
+    // Join a path and a string
+    path operator/(const path& a, const std::string& b)
+    {
+        path c(a); 
+        return c.append_path(b); 
+    }
+
 
 } } } // end namespaces
 
