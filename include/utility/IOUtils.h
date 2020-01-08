@@ -16,21 +16,17 @@ namespace utility
 		}
 	}
 
-
     // Cross-platform fix for fopen: fopen gives security warning in MSVC
     // and requests fopen_s instead, but unavailable in the other compilers.
-    FILE* file_open (std::string filename, std::string mode) {
+    static FILE* file_open (std::string filename, std::string mode) {
         FILE* in_file;
-#if defined(__MSC_VER)
+#if defined(_MSC_VER)
         errno_t err = fopen_s(&in_file, filename.c_str(), mode.c_str());
 #else
         in_file = fopen(filename.c_str(), mode.c_str());
 #endif
         return in_file;
     }
-
-
-
 
 	class IOUtils
 	{
