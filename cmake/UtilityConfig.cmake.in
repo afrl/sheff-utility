@@ -1,17 +1,8 @@
 # Make sure we have public dependencies available
-find_package(SecondPartyMath CONFIG REQUIRED
-        HINTS "${CMAKE_SOURCE_DIR}/../second_party_math/build"
-              "${CMAKE_SOURCE_DIR}/../second_party_math/install_dir")
-find_package(nlohmann_json 3.2.0 CONFIG REQUIRED
-        HINTS "${CMAKE_SOURCE_DIR}/modules/third_party/json_install_dir"
-              "${CMAKE_SOURCE_DIR}/../third_party/json_install_dir"
-              "${CMAKE_SOURCE_DIR}/../../third_party/json_install_dir"
-              "${CMAKE_SOURCE_DIR}/../json_install_dir"
-              "${CMAKE_SOURCE_DIR}/modules/third_party/json_build"
-              "${CMAKE_SOURCE_DIR}/../third_party/json_build"
-              "${CMAKE_SOURCE_DIR}/../../third_party/json_build"
-              "${CMAKE_SOURCE_DIR}/../json_build")
-
+find_package(SecondPartyMath CONFIG REQUIRED HINTS 
+  "${CMAKE_SOURCE_DIR}/../second_party/second_party_math/install_dir" "${CMAKE_SOURCE_DIR}/../second_party_math/install_dir" "${CMAKE_SOURCE_DIR}/modules/second_party/second_party_math/install_dir")
+find_package(nlohmann_json 3.2.0 CONFIG REQUIRED HINTS 
+  "${CMAKE_SOURCE_DIR}/../third_party/json_install_dir" "${CMAKE_SOURCE_DIR}/../../third_party/json_install_dir" "${CMAKE_SOURCE_DIR}/modules/third_party/json_install_dir")
 
 
 if(NOT TARGET Utility::Utility)

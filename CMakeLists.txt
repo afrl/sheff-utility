@@ -10,8 +10,23 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     endif()
 endif()
 
-
-message(STATUS $ENV{I_MPI_ROOT})
+# Set package toolchain location for Linux. To enable efficient switching between
+# toolchains for cross-compiling, we modify the location where CMake looks for 
+# packages using the find_package command by symbolically linking the default location,
+# $HOME/.cmake/packages, to a similar location with the folder name given by the 
+# compiler family. 
+if (UNIX)
+    execute_process(COMMAND "mkdir" "-p" "$ENV{HOME}/.cmake/${CMAKE_CXX_COMPILER_ID}"
+      RESULT_VARIABLE toolchain_res OUTPUT_VARIABLE toolchain_out)
+    if (toolchain_res)
+        message(ERROR "Couldn't create toolchain dir: $ENV{HOME}/.cmake/${CMAKE_CXX_COMPILER_ID} ${toolchain_out}")
+    endif ()
+    execute_process(COMMAND "ln" "-sfn" "$ENV{HOME}/.cmake/${CMAKE_CXX_COMPILER_ID}" "$ENV{HOME}/.cmake/packages"
+      RESULT_VARIABLE toolchain_res OUTPUT_VARIABLE toolchain_out)
+    if (toolchain_res)
+        message(ERROR "Couldn't create toolchain link: $ENV{HOME}/.cmake/packages ${toolchain_out}")
+    endif ()
+endif()
 
 
 # Options
@@ -22,6 +37,9 @@ option( UTILITY_UseFilesystemHack "Use if compiler has included <experimental/fi
 # For debugging, print generator, compiler, and options
 message( STATUS "Gen: ${CMAKE_GENERATOR}, CXX: ${CMAKE_CXX_COMPILER_ID}, Mode: ${CMAKE_BUILD_TYPE}" )
 message( STATUS "Tests: ${UTILITY_BuildTests}, FS HACK: ${UTILITY_UseFilesystemHack}" )
+
+# Add cmake dir to module path
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 ##################
 # Checking input #
@@ -34,13 +52,10 @@ include(${CMAKE_SOURCE_DIR}/cmake/CommonInputChecks.cmake)
 ########################
 
 
-find_package(SecondPartyMath CONFIG REQUIRED HINTS "${CMAKE_SOURCE_DIR}/../second_party_math/build" "${CMAKE_SOURCE_DIR}/../second_party_math/install_dir")
-find_package( nlohmann_json 3.2.0 CONFIG REQUIRED
-              HINTS "${CMAKE_SOURCE_DIR}/../third_party/json_build" "${CMAKE_SOURCE_DIR}/../json_build"
-                    "${CMAKE_SOURCE_DIR}/../third_party/json_install_dir" "${CMAKE_SOURCE_DIR}/../json_install_dir"
-                    "${CMAKE_SOURCE_DIR}/../third_party/json/build" "${CMAKE_SOURCE_DIR}/../json/build"
-                    "${CMAKE_SOURCE_DIR}/../third_party/json/install_dir" "${CMAKE_SOURCE_DIR}/../json/install_dir"
-)
+find_package(SecondPartyMath CONFIG REQUIRED HINTS 
+  "${CMAKE_SOURCE_DIR}/../second_party/second_party_math/install_dir" "${CMAKE_SOURCE_DIR}/../second_party_math/install_dir" "${CMAKE_SOURCE_DIR}/modules/second_party/second_party_math/install_dir")
+find_package(nlohmann_json 3.2.0 CONFIG REQUIRED HINTS 
+  "${CMAKE_SOURCE_DIR}/../third_party/json_install_dir" "${CMAKE_SOURCE_DIR}/../../third_party/json_install_dir" "${CMAKE_SOURCE_DIR}/modules/third_party/json_install_dir")
 
 
 if( UTILITY_USE_MPI )
@@ -53,7 +68,6 @@ endif()
 
 # Set the variables for UTILITY
 set( UTILITY_INCLUDE     ${CMAKE_SOURCE_DIR}/include )
-set( UTILITY_INCLUDE_SUB ${UTILITY_INCLUDE}/utility )
 set( UTILITY_SRC         ${CMAKE_SOURCE_DIR}/source )
 
 file( GLOB_RECURSE UTILITY_HEADER_LIST "${UTILITY_INCLUDE}/*.h" )
@@ -95,7 +109,7 @@ endif()
 
 # Link dependencies
 target_link_libraries(utility PUBLIC SecondPartyMath::SecondPartyMath)
-target_link_libraries(utility INTERFACE nlohmann_json::nlohmann_json)
+target_link_libraries(utility PUBLIC nlohmann_json::nlohmann_json)
 
 
 if(UTILITY_USE_MPI AND MPI_FOUND)
@@ -113,7 +127,7 @@ assign_source_group_SecondPartyMath()
 
 
 #################################
-# Add dev and unit test targets #
+# Add unit test targets #
 #################################
 
 # Build tests
@@ -170,7 +184,7 @@ install(FILES
 # Exports #
 ###########
 
-# Export just the utility target (not the dev, tests, etc.)
+# Export just the utility target (not tests, etc.)
 export(
     TARGETS utility
     FILE ${CMAKE_CURRENT_BINARY_DIR}/UtilityTargets.cmake
