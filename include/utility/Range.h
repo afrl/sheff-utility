@@ -21,6 +21,42 @@
 
 namespace utility
 {
+    /// A range to be used for array's.
+    /// \code{cpp}
+    /// double* values = { 0.5, 1.0, 2.0 };
+    /// for (double& value : range_for_array<double>(values, values + 3))
+    /// {
+    ///     value = 0.0;
+    /// }
+    /// // The array is now 0
+    /// \endcode
+    /// Added by Keith Ballard
+    template<typename T>
+    struct range_for_array
+    {
+        range_for_array(T* begin_ptr, T* end_ptr)
+            : begin_ptr_(begin_ptr), end_ptr_(end_ptr) {}
+
+        T* begin() const { return begin_ptr_; }
+        T* end() const { return end_ptr_; }
+
+        /// A template to convert the range to another derived type of T.  A compiler
+        /// error will be throw if Derived is not actually a derived type of T.
+        template<typename Derived,
+            typename std::enable_if<std::is_base_of<T, Derived>::value, T>::type * = nullptr>
+            range_for_array<Derived> as() const
+        {
+            return {
+                static_cast<Derived>(range.begin_ptr_),
+                static_cast<Derived>(range.end_ptr_)
+            };
+        }
+
+    private:
+        T* const begin_ptr_;
+        T* const end_ptr_;
+    };
+
     namespace detail
     {
         template <typename T>
