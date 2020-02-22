@@ -1,0 +1,84 @@
+#pragma once
+
+#include <bitset>
+
+namespace utility
+{
+    /// A helper function to mask a enum class to bits.
+    template<typename T>
+    int mask(const T& flag)
+    {
+        return 1 << static_cast<std::underlying_type<T>::type>(flag);
+    }
+
+    /// An generalization of std::bitset for enum class types.  Requires enum class
+    /// to have and entry called `_end` at the end of the enum
+    /// For example:
+    /// \code{cpp}
+    /// enum class FlagsTest : int8_t
+    /// {
+    ///     A,
+    ///     B,
+    ///     _end
+    /// };
+    /// 
+    /// bitset<FlagsTest> a = FlagsTest::A;
+    /// bitset<FlagsTest> b = mask(FlagsTest::A) | mask(FlagsTest::B);
+    /// \endcode
+    template<typename T>
+    class bitset : std::bitset<static_cast<unsigned long long>(T::_end)>
+    {
+    public:
+        using Parent = std::bitset<static_cast<unsigned long long>(T::_end)>;
+
+        // Constructors
+        bitset(const T& flag)
+            : Parent()
+        {
+            auto flag_index = static_cast<unsigned long long>(flag);
+            this->flip(flag_index);
+        }
+        using Parent::Parent;
+
+        // Comparison
+        using Parent::operator==;
+        using Parent::operator!=;
+
+        // Element access
+        inline bool contains(const T& flag) const
+        {
+            auto flag_index = static_cast<unsigned long long>(flag);
+            return this->test(flag_index);
+        }
+        using Parent::all;
+        using Parent::any;
+        using Parent::none;
+        using Parent::count;
+
+        // Capacity
+        using Parent::size;
+
+        // Modifiers
+        inline bitset& operator=(const T& flag)
+        {
+            auto flag_index = static_cast<unsigned long long>(flag);
+            this->reset();
+            this->flip(flag_index);
+            return *this;
+        }
+        using Parent::operator=;
+        using Parent::operator&=;
+        using Parent::operator|=;
+        using Parent::operator^=;
+        using Parent::operator~;
+        using Parent::operator<<=;
+        using Parent::operator>>=;
+        using Parent::operator<<;
+        using Parent::operator>>;
+
+        // Conversions
+        using Parent::to_string;
+        using Parent::to_ulong;
+        using Parent::to_ullong;
+    };
+}

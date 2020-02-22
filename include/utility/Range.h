@@ -23,8 +23,8 @@ namespace utility
 {
     /// A range to be used for array's.
     /// \code{cpp}
-    /// double* values = { 0.5, 1.0, 2.0 };
-    /// for (double& value : range_for_array<double>(values, values + 3))
+    /// std::array<double, 3> values = { 0.5, 1.0, 2.0 };
+    /// for (double& value : range_for_array<double>(&values[0], &values[0] + 3))
     /// {
     ///     value = 0.0;
     /// }
@@ -43,12 +43,12 @@ namespace utility
         /// A template to convert the range to another derived type of T.  A compiler
         /// error will be throw if Derived is not actually a derived type of T.
         template<typename Derived,
-            typename std::enable_if<std::is_base_of<T, Derived>::value, T>::type * = nullptr>
-            range_for_array<Derived> as() const
+                 typename std::enable_if<std::is_base_of<T, Derived>::value, T>::type * = nullptr>
+        range_for_array<Derived> as() const
         {
             return {
-                static_cast<Derived>(range.begin_ptr_),
-                static_cast<Derived>(range.end_ptr_)
+                static_cast<Derived*>(begin_ptr_),
+                static_cast<Derived*>(end_ptr_)
             };
         }
 
