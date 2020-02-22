@@ -24,5 +24,7 @@ int main()
     assert(b.contains(FlagsTest::A));
     assert(b.contains(FlagsTest::B));
 
+    utility::bitset<FlagsTest> c;
+
     return 0; 
 }

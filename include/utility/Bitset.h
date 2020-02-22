@@ -32,6 +32,7 @@ namespace utility
         using Parent = std::bitset<static_cast<unsigned long long>(T::_end)>;
 
         // Constructors
+        bitset() : Parent() {}
         bitset(const T& flag)
             : Parent()
         {
