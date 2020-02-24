@@ -60,6 +60,12 @@ namespace utility
         using Parent::size;
 
         // Modifiers
+        inline bitset& flip(const T& flag)
+        {
+            auto flag_index = static_cast<unsigned long long>(flag);
+            Parent::flip(flag_index);
+            return *this;
+        }
         inline bitset& operator=(const T& flag)
         {
             auto flag_index = static_cast<unsigned long long>(flag);
