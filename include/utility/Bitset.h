@@ -36,8 +36,7 @@ namespace utility
         bitset(const T& flag)
             : Parent()
         {
-            auto flag_index = static_cast<unsigned long long>(flag);
-            this->flip(flag_index);
+            this->flip(flag);
         }
         using Parent::Parent;
 
@@ -68,9 +67,8 @@ namespace utility
         }
         inline bitset& operator=(const T& flag)
         {
-            auto flag_index = static_cast<unsigned long long>(flag);
             this->reset();
-            this->flip(flag_index);
+            this->flip(flag);
             return *this;
         }
         using Parent::operator=;
