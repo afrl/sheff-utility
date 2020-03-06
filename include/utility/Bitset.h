@@ -8,7 +8,7 @@ namespace utility
     template<typename T>
     int mask(const T& flag)
     {
-        return 1 << static_cast<std::underlying_type<T>::type>(flag);
+        return 1 << static_cast<typename std::underlying_type<T>::type>(flag);
     }
 
     /// An generalization of std::bitset for enum class types.  Requires enum class
