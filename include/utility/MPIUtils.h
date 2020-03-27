@@ -12,6 +12,12 @@
 #include <string>
 #include <vector>
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <process.h>
+#else
+#include <unistd.h>
+#endif
+
 #define _EXCEPTION(m) _UTIL_MSG_EXCEPT(m)
 namespace utility
 {
@@ -177,6 +183,9 @@ namespace utility
 
         /// Returns the number of ranks in the local communicator
         static const int get_num_local_ranks();
+
+        /// Each rank ouputs their process ID to the screen.
+        static void print_process_ids();
 
         static void finalize();
 
@@ -802,6 +811,16 @@ namespace utility
 #else
         return 1;
 #endif
+    }
+
+    inline void MPIUtils::print_process_ids()
+    {
+#if defined(_WIN32) || defined(_WIN64)
+        int pid = ::_getpid();
+#else
+        int pid = getpid();
+#endif
+        printf("Rank %d is running on pid %d.\n", get_local_rank(), pid);
     }
 
     inline void MPIUtils::finalize()
