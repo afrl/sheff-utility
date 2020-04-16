@@ -57,6 +57,26 @@ namespace utility
         return *p == 0; 
     }
 
+    unsigned int str_to_axis(const std::string& s)
+    {
+        if (istr_is_equal(s, "x"))
+        {
+            return 0;
+        }
+        else if (istr_is_equal(s, "y"))
+        {
+            return 1;
+        }
+        else if (istr_is_equal(s, "z"))
+        {
+            return 2;
+        }
+        else
+        {
+            return std::atoi(s.c_str());
+        }
+    }
+
     std::vector<std::string> tokenize(const std::string & s)
     {
         std::istringstream ss(s);
