@@ -542,9 +542,9 @@ namespace utility
 
         // Figure out the size of the data on each rank that will be communciated
         std::vector<int> num_values_for_each_proc(comm_size);
-        MPI_Gather(&num_values_for_this_proc, 1, MPI_INT,
+        MPI_Allgather(&num_values_for_this_proc, 1, MPI_INT,
             &num_values_for_each_proc[0], 1, MPI_INT,
-            0, comm);
+            comm);
 
         // Compute the number of bytes to expect from each rank and
         // the offset in the buffer for each rank.
