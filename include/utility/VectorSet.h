@@ -22,6 +22,8 @@ namespace utility
         /// Returns the size of the container (the number of items stored)
         inline const std::size_t size() const { return v.size(); }
 
+        void reserve(const std::size_t n) { v.reserve(n); }
+
         /// Tries to inserts an item into the container and returns a bool
         /// indicating if an item was actually inserted.
         bool insert(const T& val);
