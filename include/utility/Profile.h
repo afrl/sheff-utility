@@ -16,7 +16,7 @@ namespace utility
             const int id;
             const std::string caller;
             const std::string description;
-            const std::chrono::steady_clock::time_point start_time;
+            const std::chrono::high_resolution_clock::time_point start_time;
             const int depth;
         };
 
@@ -25,8 +25,8 @@ namespace utility
             const int id;
             const std::string caller;
             const std::string description;
-            const std::chrono::steady_clock::time_point start_time;
-            const std::chrono::steady_clock::time_point end_time;
+            const std::chrono::high_resolution_clock::time_point start_time;
+            const std::chrono::high_resolution_clock::time_point end_time;
             const int depth;
         };
     }
