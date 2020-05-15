@@ -140,7 +140,11 @@ namespace utility
             const int pad_size = 3;
 
             // This should always be empty, if not, check the code at whatever function is in starts_
-            assert(starts_.empty());
+            if (!starts_.empty())
+            {
+                std::cout << std::endl << "Profile information cannot be printed because something went wrong." << std::endl;
+                return;
+            }
 
             std::vector<std::string> msg_by_id(completed_intervals_.size());
             int curr_parent_id = -1;
