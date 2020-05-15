@@ -228,11 +228,9 @@ namespace utility
         MPIUtilsState& state = get_state();
 
         // If the object has already been initialized, just return
-        if (state.initialized == true) {
-            // If init() is called more than once, there probably is a logic error in the code that
-            // should be addressed (as opposed to ignoring the call)... Thoughts?
-            throw _EXCEPTION("MPIUtils::init() already called.");
-            //return;
+        if (state.initialized == true)
+        {
+            return;
         }
 
         // Initialize MPI, if it isn't already.  (If this code is being used in a library, then perhaps PETSc init might
