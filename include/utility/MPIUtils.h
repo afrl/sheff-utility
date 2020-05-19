@@ -174,6 +174,9 @@ namespace utility
 
         /// An accessor method to get global rank
         static const int get_global_rank() { return get_state().global_rank; }
+        
+        /// Shortcut to see if on root rank
+        static const bool is_root() { return get_state().global_rank == 0; }
 
         /// An accessor method to get local rank
         static const int get_local_rank() { return get_state().local_rank; }
