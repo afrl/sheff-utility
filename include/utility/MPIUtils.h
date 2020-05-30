@@ -161,6 +161,45 @@ namespace utility
         template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type * = nullptr>
         static T max_across_ranks(const T& value, const bool use_local_comm = true);
 
+        /// Exchanges a single fundamental object with specific ranks.  This is useful for scattering data
+        /// to adjacent ranks.
+        /// \param n_destination_ranks - the number of ranks to send data to
+        /// \param destination_ranks - the list of ranks to send data to (must be size n_destination_ranks)
+        /// \param send_data - the list of data to send ordered by destination_ranks (must be size n_destination_ranks)
+        /// \param n_source_ranks - the number of ranks to receive data from
+        /// \param source_ranks - the list of ranks to receive data from (must be size n_source_ranks)
+        template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
+        static std::vector<T> exchange_objects(
+            const int n_destination_ranks,
+            const int* destination_ranks,
+            const T* send_data,
+            const int n_source_ranks,
+            const int* source_ranks,
+            const bool use_local_comm = true);
+
+        /// Exchanges arrays of fundamental types with specific ranks.  This is useful for scattering arrays
+        /// to adjacent ranks.
+        /// \param n_destination_ranks - the number of ranks to send data to
+        /// \param destination_ranks - the list of ranks to send data to (must be size n_destination_ranks)
+        /// \param send_data - the list of data to send ordered by destination_ranks
+        /// \param send_rank_offsets - list of offets for each rank (must be size n_destination_ranks + 1)
+        /// \param n_source_ranks - the number of ranks to receive data from
+        /// \param source_ranks - the list of ranks to receive data from (must be size n_source_ranks)
+        ///
+        /// Puts received data into receive_data with receive_rank_offsets indicating the offets for each
+        /// rank to receive from.  Resizes vectors as needed.
+        template<typename T, typename OffsetType, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
+        static void exchange_arrays(
+            const int n_destination_ranks,
+            const int* destination_ranks,
+            const T* send_data,
+            const OffsetType* send_rank_offsets,
+            const int n_source_ranks,
+            const int* source_ranks,
+            std::vector<T>& receive_data,
+            std::vector<OffsetType>& receive_rank_offsets,
+            const bool use_local_comm = true);
+
         /// Sends data from root of one group to the root of another group.  This allows
         /// two programs to communicate with each other using this interface.
         /// Note: does a blocking send
@@ -565,8 +604,9 @@ namespace utility
 
         // Note: num_bytes_for_this_proc, recv_counts, and recv_offsets must all be
         // in terms of the bytes (not number of values)
-        MPI_Allgatherv(&data_from_this_proc[0], num_bytes_for_this_proc, MPI_CHAR,
-            &recv_buffer[0], &recv_counts[0], &recv_offsets[0], MPI_CHAR,
+        MPI_Allgatherv(
+            data_from_this_proc, num_bytes_for_this_proc, MPI_CHAR,
+            recv_buffer.data(), recv_counts.data(), recv_offsets.data(), MPI_CHAR,
             comm);
 
         return recv_buffer;
@@ -580,7 +620,7 @@ namespace utility
     {
 #ifdef HAVE_MPI
         return all_gather_arrays(
-            &data_from_this_proc[0],
+            data_from_this_proc.data(),
             static_cast<int>(data_from_this_proc.size()),
             use_local_comm);
 #else
@@ -751,6 +791,156 @@ namespace utility
         return max_value;
 #else
         return value;
+#endif
+    }
+
+    template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
+    inline std::vector<T> MPIUtils::exchange_objects(
+        const int n_destination_ranks,
+        const int* destination_ranks,
+        const T* send_data,
+        const int n_source_ranks,
+        const int* source_ranks,
+        const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("exchange_objects");
+
+        // Select which comm to use for all MPI operations in this call
+        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
+
+        // Make send requests
+        std::vector<MPI_Request> send_requests(n_destination_ranks);
+        for (auto i = 0; i < n_destination_ranks; i++)
+        {
+            MPI_Isend(
+                &send_data[i],
+                sizeof(T),
+                MPI_BYTE,
+                destination_ranks[i],
+                0,
+                comm,
+                &send_requests[i]);
+        }
+
+        // Make receive requests        
+        std::vector<T> receive_data(n_source_ranks);
+        std::vector<MPI_Request> receive_requests(n_source_ranks);
+        for (auto i = 0; i < n_source_ranks; i++)
+        {
+            MPI_Irecv(
+                &receive_data[i],
+                sizeof(T),
+                MPI_BYTE,
+                source_ranks[i],
+                MPI_ANY_TAG, // We don't need to use the tag
+                comm,
+                &receive_requests[i]);
+        }
+
+        // Wait for receive requests to be complete
+        MPI_Status status;
+        for (auto i = 0; i < n_source_ranks; i++)
+        {
+            MPI_Wait(&receive_requests[i], &status);
+        }
+
+        return receive_data;
+#else
+        return std::vector<T>();
+#endif
+    }
+
+    template<typename T, typename OffsetType, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
+    inline void MPIUtils::exchange_arrays(
+        const int n_destination_ranks, 
+        const int* destination_ranks, 
+        const T* send_data, 
+        const OffsetType* send_rank_offsets, 
+        const int n_source_ranks, 
+        const int* source_ranks, 
+        std::vector<T>& receive_data, 
+        std::vector<OffsetType>& receive_rank_offsets, 
+        const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("exchange_arrays");
+
+        // Select which comm to use for all MPI operations in this call
+        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
+
+        std::vector<MPI_Request> requests;
+        requests.reserve(n_destination_ranks + n_source_ranks);
+
+        // Exchange the offsets with the destination ranks so the receive buffers can be created.
+        std::vector<OffsetType> send_counts(n_destination_ranks);
+        for (auto i = 0; i < n_destination_ranks; i++)
+        {
+            send_counts[i] = send_rank_offsets[i + 1] - send_rank_offsets[i];
+        }
+        std::vector<OffsetType> receive_counts = exchange_objects<OffsetType>(
+            n_destination_ranks,
+            destination_ranks,
+            send_counts.data(),
+            n_source_ranks,
+            source_ranks,
+            use_local_comm);
+
+        auto total_receive_counts = std::accumulate(receive_counts.begin(), receive_counts.end(), 0);
+        receive_data.resize(total_receive_counts);
+
+        receive_rank_offsets.clear();
+        receive_rank_offsets.reserve(n_source_ranks + 1);
+
+        OffsetType curr_offset = 0;
+        receive_rank_offsets.push_back(curr_offset);
+        for (auto i = 0; i < n_source_ranks; i++)
+        {
+            curr_offset += receive_counts[i];
+            receive_rank_offsets.push_back(curr_offset);
+        }
+
+        // Make send requests
+        std::vector<MPI_Request> send_requests(n_destination_ranks);
+        for (auto i = 0; i < n_destination_ranks; i++)
+        {
+            MPI_Isend(
+                &send_data[send_rank_offsets[i]],
+                send_counts[i] * sizeof(T),
+                MPI_BYTE,
+                destination_ranks[i],
+                0,
+                comm,
+                &send_requests[i]);
+        }
+
+        // Make receive requests
+        std::vector<MPI_Request> receive_requests(n_source_ranks);
+        for (auto i : utility::range_from_zero(n_source_ranks))
+        {
+            MPI_Irecv(
+                &receive_data[receive_rank_offsets[i]],
+                receive_counts[i] * sizeof(T),
+                MPI_BYTE,
+                source_ranks[i],
+                MPI_ANY_TAG, // We don't need to use the tag
+                comm,
+                &receive_requests[i]);
+        }
+
+        // Wait for receive requests to be complete
+        MPI_Status status;
+        for (auto i : utility::range_from_zero(n_source_ranks))
+        {
+            MPI_Wait(&receive_requests[i], &status);
+        }
+
+        return;
+
+#else
+        receive_data.clear();
+        receive_rank_offsets.clear();
+        return;
 #endif
     }
 
