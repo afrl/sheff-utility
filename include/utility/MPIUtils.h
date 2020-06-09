@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Exceptions.h"
+#include "Range.h"
 #include <nlohmann/json.hpp>
 
 #ifdef HAVE_MPI
