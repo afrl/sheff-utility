@@ -764,8 +764,8 @@ namespace utility
 #endif
     }
 
-    template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
-    inline T MPIUtils::sum_across_ranks(const T& value, const bool use_local_comm)
+    template<>
+    inline int32_t MPIUtils::sum_across_ranks(const int32_t& value, const bool use_local_comm)
     {
 #ifdef HAVE_MPI
         VERIFY_INIT("sum_across_ranks");
@@ -773,9 +773,60 @@ namespace utility
         // Select which comm to use for all MPI operations in this call
         MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
 
-        T max_value;
-        MPI_Allreduce(&value, &max_value, sizeof(T), MPI_CHAR, MPI_SUM, comm);
-        return max_value;
+        int sum_value;
+        MPI_Allreduce(&value, &sum_value, 1, MPI_INT32_T, MPI_SUM, comm);
+        return sum_value;
+#else
+        return value;
+#endif
+    }
+
+    template<>
+    inline uint32_t MPIUtils::sum_across_ranks(const uint32_t& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("sum_across_ranks");
+
+        // Select which comm to use for all MPI operations in this call
+        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
+
+        int sum_value;
+        MPI_Allreduce(&value, &sum_value, 1, MPI_UINT32_T, MPI_SUM, comm);
+        return sum_value;
+#else
+        return value;
+#endif
+    }
+
+    template<>
+    inline int64_t MPIUtils::sum_across_ranks(const int64_t& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("sum_across_ranks");
+
+        // Select which comm to use for all MPI operations in this call
+        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
+
+        int sum_value;
+        MPI_Allreduce(&value, &sum_value, 1, MPI_INT64_T, MPI_SUM, comm);
+        return sum_value;
+#else
+        return value;
+#endif
+    }
+
+    template<>
+    inline uint64_t MPIUtils::sum_across_ranks(const uint64_t& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("sum_across_ranks");
+
+        // Select which comm to use for all MPI operations in this call
+        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
+
+        int sum_value;
+        MPI_Allreduce(&value, &sum_value, 1, MPI_UINT64_T, MPI_SUM, comm);
+        return sum_value;
 #else
         return value;
 #endif
