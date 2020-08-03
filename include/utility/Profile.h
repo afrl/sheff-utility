@@ -1,5 +1,6 @@
 #pragma once
 
+#include "MPIUtils.h"
 #include "Exceptions.h"
 
 #include <chrono>
@@ -97,7 +98,7 @@ namespace utility
     public:
         ~Profile()
         {
-            print();
+            if (utility::MPIUtils::is_root()) print();
         }
 
         static void start(

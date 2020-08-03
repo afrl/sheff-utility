@@ -106,7 +106,9 @@ namespace utility
         /// will be sent to the root rank of the respective group.
         /// Specialization for fundamental types (i.e. sizeof(T) would yield the number of bytes needed)
         template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
-        static std::vector<T> gather_vectors(const std::vector<T> & data_from_this_proc, const bool use_local_comm = true);
+        static std::vector<T> gather_vectors(
+            const std::vector<T> & data_from_this_proc, 
+            const bool use_local_comm = true);
 
         /// This method will gather a vector from each process to the root process
         /// of the communicator specified.  If use_local_comm is used, then the data
@@ -115,7 +117,18 @@ namespace utility
         /// Specialization for non-fundamental types (i.e. sizeof(T) would not yield the number of bytes needed)
         /// For this specialization, serialization is required, so the object must be convertable to JSON
         template<typename T, typename std::enable_if<!std::is_fundamental<T>::value, T>::type* = nullptr>
-        static std::vector<T> gather_vectors(const std::vector<T> & data_from_this_proc, const bool use_local_comm = true);
+        static std::vector<T> gather_vectors(
+            const std::vector<T> & data_from_this_proc, 
+            const bool use_local_comm = true);
+
+        /// This method will gather a string from each process and delivers it to the root process
+        /// of the communicator specified.
+        ///
+        /// If use_local_comm is used, then the data among each group of ranks with the same
+        /// group_key when init was called will be sent to the root rank of the respective group.
+        static std::vector<std::string> gather_strings_by_rank(
+            const std::string& data_from_this_proc,
+            const bool use_local_comm = true);
 
         /// This method will gather an array from each process and delivers it to every process
         /// of the communicator specified.  If use_local_comm is used, then the data
@@ -134,7 +147,9 @@ namespace utility
         /// will be sent to the root rank of the respective group.
         /// Specialization for fundamental types (i.e. sizeof(T) would yield the number of bytes needed)
         template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
-        static std::vector<T> all_gather_vectors(const std::vector<T> & data_from_this_proc, const bool use_local_comm = true);
+        static std::vector<T> all_gather_vectors(
+            const std::vector<T> & data_from_this_proc, 
+            const bool use_local_comm = true);
 
         /// This method will scatter a vector from each process and delievers it to every process
         /// of the communicator specified.  If use_local_comm is used, then the data
@@ -143,9 +158,11 @@ namespace utility
         /// Specialization for non-fundamental types (i.e. sizeof(T) would not yield the number of bytes needed)
         /// For this specialization, serialization is required, so the object must be convertable to JSON
         template<typename T, typename std::enable_if<!std::is_fundamental<T>::value, T>::type* = nullptr>
-        static std::vector<T> all_gather_vectors(const std::vector<T> & data_from_this_proc, const bool use_local_comm = true);
+        static std::vector<T> all_gather_vectors(
+            const std::vector<T> & data_from_this_proc, 
+            const bool use_local_comm = true);
 
-        // This method will gather an array from each process and delivers it to every process
+        /// This method will gather an array from each process and delivers it to every process
         /// of the communicator specified.  This very similar to all_gather_arrays, but the array
         /// from each rank is kept separate.  The outer vector has a size of n_ranks.
         ///
@@ -158,11 +175,46 @@ namespace utility
             const int n_data_from_this_proc,
             const bool use_local_comm = true);
 
+        /// Scatters a single value to each rank from the root.
+        /// \param data_to_scatter - array of values of the size of the comm
         template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
-        static T sum_across_ranks(const T & value, const bool use_local_comm = true);
+        static T scatter(
+            const std::vector<T>& data_to_scatter,
+            const bool use_local_comm = true);
 
-        template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type * = nullptr>
-        static T max_across_ranks(const T& value, const bool use_local_comm = true);
+        /// Given a 1D array on the root rank, scatters the relevant portions of the array to the
+        /// other ranks based on the offets.  This does not require the portion of the 1D array
+        /// the corresponds to a rank to the same size as the other ranks.
+        /// Returns the vector of values for the respective rank on each rank.
+        template<typename T, typename OffsetType, typename std::enable_if<std::is_fundamental<T>::value, T>::type * = nullptr>
+        static std::vector<T> scatter_arrays(
+            const std::vector<T>& data_to_scatter,
+            const std::vector<OffsetType>& offsets,
+            const bool use_local_comm = true);
+
+        /// Computes the sum of a scalar value across all ranks in the the respective communicator
+        /// (local or global) and returns the value on every rank.
+        static int32_t sum_across_ranks(const int32_t& value, const bool use_local_comm = true);
+        static uint32_t sum_across_ranks(const uint32_t& value, const bool use_local_comm = true);
+        static int64_t sum_across_ranks(const int64_t& value, const bool use_local_comm = true);
+        static uint64_t sum_across_ranks(const uint64_t& value, const bool use_local_comm = true);
+        static double sum_across_ranks(const double& value, const bool use_local_comm = true);
+
+        /// Computes the sum of a scalar value across all ranks in the the respective communicator
+        /// (local or global) and returns the value ONLY to the root rank.
+        static int32_t sum_to_root(const int32_t& value, const bool use_local_comm = true);
+        static uint32_t sum_to_root(const uint32_t& value, const bool use_local_comm = true);
+        static int64_t sum_to_root(const int64_t& value, const bool use_local_comm = true);
+        static uint64_t sum_to_root(const uint64_t& value, const bool use_local_comm = true);
+        static double sum_to_root(const double& value, const bool use_local_comm = true);
+
+        /// Computes the max of a scalar value across all ranks in the the respective communicator
+        /// (local or global) and returns the value (on every rank).
+        static int32_t max_across_ranks(const int32_t& value, const bool use_local_comm = true);
+        static uint32_t max_across_ranks(const uint32_t& value, const bool use_local_comm = true);
+        static int64_t max_across_ranks(const int64_t& value, const bool use_local_comm = true);
+        static uint64_t max_across_ranks(const uint64_t& value, const bool use_local_comm = true);
+        static double max_across_ranks(const double& value, const bool use_local_comm = true);
 
         /// Exchanges a single fundamental object with specific ranks.  This is useful for scattering data
         /// to adjacent ranks.
@@ -245,6 +297,44 @@ namespace utility
             static MPIUtilsState state;
             return state;
         }
+
+        template<typename T>
+        static T reduce_helper(
+            const T& value,
+            const bool use_local_comm,
+            const MPI_Datatype& mpi_type,
+            const MPI_Op& mpi_op)
+        {
+#ifdef HAVE_MPI
+            // Select which comm to use for all MPI operations in this call
+            MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
+
+            T reduced_value = value;
+            MPI_Reduce(&value, &reduced_value, 1, mpi_type, mpi_op, 0, comm);
+            return reduced_value;
+#else
+            return value;
+#endif
+        }
+
+        template<typename T>
+        static T all_reduce_helper(
+            const T& value,
+            const bool use_local_comm,
+            const MPI_Datatype& mpi_type,
+            const MPI_Op& mpi_op)
+        {
+#ifdef HAVE_MPI
+            // Select which comm to use for all MPI operations in this call
+            MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
+
+            T reduced_value;
+            MPI_Allreduce(&value, &reduced_value, 1, mpi_type, mpi_op, comm);
+            return reduced_value;
+#else
+            return value;
+#endif
+        }
     };
 
 #ifndef NDEBUG
@@ -291,7 +381,7 @@ namespace utility
 
         // Get rank
         MPI_Comm_rank(MPI_COMM_WORLD, &state.global_rank);
-        std::cout << "rank is: " << state.global_rank << "\n";
+        //std::cout << "rank is: " << state.global_rank << "\n";
 
         // Get group handle for all_process_group from Comm_World
         // Each process started by the mpiexec must make the split call
@@ -422,7 +512,9 @@ namespace utility
     }
 
     template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
-    inline std::vector<T> MPIUtils::gather_vectors(const std::vector<T>& data_from_this_proc, const bool use_local_comm)
+    inline std::vector<T> MPIUtils::gather_vectors(
+        const std::vector<T>& data_from_this_proc,
+        const bool use_local_comm)
     {
 #ifdef HAVE_MPI
         VERIFY_INIT("gather_vectors");
@@ -439,7 +531,8 @@ namespace utility
         const int num_values_for_this_proc = static_cast<int>(data_from_this_proc.size());
         const int num_bytes_for_this_proc = num_values_for_this_proc * size_of_type;
 
-        if (comm_rank == 0) {
+        if (comm_rank == 0)
+        {
             // Figure out the size of the data on each rank that will be communciated
             std::vector<int> num_values_for_each_proc(comm_size);
             MPI_Gather(&num_values_for_this_proc, 1, MPI_INT,
@@ -451,7 +544,8 @@ namespace utility
             std::vector<int> recv_counts(comm_size);
             std::vector<int> recv_offsets(comm_size + 1);
             int offset = 0;
-            for (auto i = 0; i < comm_size; i++) {
+            for (auto i = 0; i < comm_size; i++)
+            {
                 recv_counts[i] = num_values_for_each_proc[i] * size_of_type;
                 recv_offsets[i] = offset;
                 offset += recv_counts[i];
@@ -461,7 +555,9 @@ namespace utility
             // Allocate a buffer to put the data in
             int num_total_values_needed = 0;
             for (auto num_values : num_values_for_each_proc)
+            {
                 num_total_values_needed += num_values;
+            }
             std::vector<T> recv_buffer(num_total_values_needed);
 
             // Note: num_bytes_for_this_proc, recv_counts, and recv_offsets must all be
@@ -472,7 +568,8 @@ namespace utility
 
             return recv_buffer;
         }
-        else {
+        else
+        {
             // Figure out the size of the data on each rank that will be communciated
             MPI_Gather(&num_values_for_this_proc, 1, MPI_INT,
                 nullptr, 1, MPI_INT,
@@ -555,6 +652,90 @@ namespace utility
         }
 #else
         return data_from_this_proc;
+#endif
+    }
+
+    inline std::vector<std::string> MPIUtils::gather_strings_by_rank(
+        const std::string& data_from_this_proc, 
+        const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("gather_strings_by_rank");
+
+        // Select which comm to use for all MPI operations in this call
+        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
+        // Get information about the MPI communicator
+        int comm_size;
+        MPI_Comm_size(comm, &comm_size);
+        int comm_rank;
+        MPI_Comm_rank(comm, &comm_rank);
+
+        const int size_of_type = sizeof(std::string::value_type);
+        const int num_chars_for_this_proc = static_cast<int>(data_from_this_proc.size());
+        const int num_bytes_for_this_proc = num_chars_for_this_proc * size_of_type;
+
+        if (comm_rank == 0)
+        {
+            // Figure out the size of the data on each rank that will be communciated
+            std::vector<int> num_chars_for_each_proc(comm_size);
+            MPI_Gather(&num_chars_for_this_proc, 1, MPI_INT,
+                &num_chars_for_each_proc[0], 1, MPI_INT,
+                0, comm);
+
+            // Compute the number of bytes to expect from each rank and
+            // the offset in the buffer for each rank.
+            std::vector<int> recv_counts(comm_size);
+            std::vector<int> recv_offsets(comm_size + 1);
+            int offset = 0;
+            for (auto i = 0; i < comm_size; i++)
+            {
+                recv_counts[i] = num_chars_for_each_proc[i] * size_of_type;
+                recv_offsets[i] = offset;
+                offset += recv_counts[i];
+            }
+            recv_offsets.back() = offset;
+
+            // Allocate a buffer to put the data in
+            int num_total_chars_needed = 0;
+            for (auto num_chars : num_chars_for_each_proc)
+            {
+                num_total_chars_needed += num_chars;
+            }
+            std::vector<std::string::value_type> recv_buffer(num_total_chars_needed);
+
+            // Note: num_bytes_for_this_proc, recv_counts, and recv_offsets must all be
+            // in terms of the bytes (not number of values)
+            MPI_Gatherv(&data_from_this_proc[0], num_bytes_for_this_proc, MPI_CHAR,
+                &recv_buffer[0], &recv_counts[0], &recv_offsets[0], MPI_CHAR,
+                0, comm);
+
+            std::vector<std::string> string_by_rank;
+            for (int i = 0; i < comm_size; i++)
+            {
+                string_by_rank.push_back(std::string(
+                    recv_buffer.begin() + recv_offsets[i],
+                    recv_buffer.begin() + recv_offsets[i+1]));
+            }
+
+            return string_by_rank;
+        }
+        else
+        {
+            // Figure out the size of the data on each rank that will be communciated
+            MPI_Gather(&num_chars_for_this_proc, 1, MPI_INT,
+                nullptr, 1, MPI_INT,
+                0, comm);
+
+            // Send the data to the root
+            MPI_Gatherv(&data_from_this_proc[0], num_bytes_for_this_proc, MPI_CHAR,
+                nullptr, nullptr, nullptr, MPI_CHAR,
+                0, comm);
+
+            // Just return an empty container for all by the root rank
+            return std::vector<std::string>();
+        }
+#else
+        return { data_from_this_proc };
 #endif
     }
 
@@ -766,86 +947,246 @@ namespace utility
 #endif
     }
 
-    template<>
+    template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
+    inline T MPIUtils::scatter(
+        const std::vector<T>& data_to_scatter,
+        const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("scatter");
+
+        // Select which comm to use for all MPI operations in this call
+        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
+        // Get information about the MPI communicator
+        int comm_size;
+        MPI_Comm_size(comm, &comm_size);
+        int comm_rank;
+        MPI_Comm_rank(comm, &comm_rank);
+
+        assert(data_to_scatter.size() == comm_size || comm_rank > 0);
+
+        T recvbuffer;
+        MPI_Scatter(
+            data_to_scatter.data(), // sendbuff - address of send buffer (choice, significant only at root) 
+            sizeof(T), // sendcount - number of elements sent to each process (integer, significant only at root) 
+            MPI_CHAR, // sendbuff - data type of send buffer elements (significant only at root) (handle)
+            &recvbuffer, // recvbuff - (output) address of receive buffer (choice) 
+            sizeof(T), // recvcount - number of elements in receive buffer(integer)
+            MPI_CHAR, // recvtype - data type of receive buffer elements (handle) 
+            0, // root
+            comm);
+
+        return recvbuffer;
+
+#else
+        return value;
+#endif
+    }
+
+    template<typename T, typename OffsetType, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
+    inline std::vector<T> MPIUtils::scatter_arrays(
+        const std::vector<T>& data_to_scatter, 
+        const std::vector<OffsetType>& offsets,
+        const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("scatter_arrays");
+
+        // Select which comm to use for all MPI operations in this call
+        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
+        // Get information about the MPI communicator
+        int comm_size;
+        MPI_Comm_size(comm, &comm_size);
+        int comm_rank;
+        MPI_Comm_rank(comm, &comm_rank);
+
+        assert(offsets.size() == comm_size + 1 || comm_rank > 0);
+
+        std::vector<int> offsets_bytes(offsets.size());
+        for (int i = 0; i < offsets_bytes.size(); i++)
+        {
+            offsets_bytes[i] = offsets[i] * sizeof(T);
+        }
+        std::vector<int> send_byte_counts(offsets.size() - 1);
+        for (int i = 0; i < send_byte_counts.size(); i++)
+        {
+            send_byte_counts[i] = (offsets[i + 1] - offsets[i]) * sizeof(T);
+        }
+
+        // Scatter counts so each rank knows how to allocate the recv buffer
+        auto recv_byte_count = MPIUtils::scatter<int>(send_byte_counts);
+
+        std::vector<T> recv_buff(recv_byte_count / sizeof(T));
+        MPI_Scatterv(
+            data_to_scatter.data(), // sendbuf - address of send buffer (choice, significant only at root) 
+            send_byte_counts.data(), //sendcounts - integer array (of length group size) specifying the number of elements to send to each processor
+            offsets_bytes.data(), // displs - integer array (of length group size). Entry i specifies the displacement (relative to sendbuf from which to take the outgoing data to process i
+            MPI_CHAR, // sendtype - data type of send buffer elements (handle) 
+            recv_buff.data(), // recvbuff - (output) address of receive buffer (choice) 
+            recv_byte_count, // recvcount - number of elements in receive buffer (integer)
+            MPI_CHAR, // recvtype - data type of receive buffer elements (handle)
+            0, // root
+            comm);
+        return recv_buff;
+#else
+        return data_to_scatter;
+#endif
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // sum_across_ranks
+
     inline int32_t MPIUtils::sum_across_ranks(const int32_t& value, const bool use_local_comm)
     {
 #ifdef HAVE_MPI
         VERIFY_INIT("sum_across_ranks");
-
-        // Select which comm to use for all MPI operations in this call
-        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
-
-        int sum_value;
-        MPI_Allreduce(&value, &sum_value, 1, MPI_INT32_T, MPI_SUM, comm);
-        return sum_value;
+        return MPIUtils::all_reduce_helper<int32_t>(value, use_local_comm, MPI_INT32_T, MPI_SUM);
 #else
         return value;
 #endif
     }
 
-    template<>
     inline uint32_t MPIUtils::sum_across_ranks(const uint32_t& value, const bool use_local_comm)
     {
 #ifdef HAVE_MPI
         VERIFY_INIT("sum_across_ranks");
-
-        // Select which comm to use for all MPI operations in this call
-        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
-
-        int sum_value;
-        MPI_Allreduce(&value, &sum_value, 1, MPI_UINT32_T, MPI_SUM, comm);
-        return sum_value;
+        return all_reduce_helper<uint32_t>(value, use_local_comm, MPI_UINT32_T, MPI_SUM);
 #else
         return value;
 #endif
     }
 
-    template<>
     inline int64_t MPIUtils::sum_across_ranks(const int64_t& value, const bool use_local_comm)
     {
 #ifdef HAVE_MPI
         VERIFY_INIT("sum_across_ranks");
-
-        // Select which comm to use for all MPI operations in this call
-        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
-
-        int sum_value;
-        MPI_Allreduce(&value, &sum_value, 1, MPI_INT64_T, MPI_SUM, comm);
-        return sum_value;
+        return all_reduce_helper<int64_t>(value, use_local_comm, MPI_INT64_T, MPI_SUM);
 #else
         return value;
 #endif
     }
 
-    template<>
     inline uint64_t MPIUtils::sum_across_ranks(const uint64_t& value, const bool use_local_comm)
     {
 #ifdef HAVE_MPI
         VERIFY_INIT("sum_across_ranks");
-
-        // Select which comm to use for all MPI operations in this call
-        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
-
-        int sum_value;
-        MPI_Allreduce(&value, &sum_value, 1, MPI_UINT64_T, MPI_SUM, comm);
-        return sum_value;
+        return all_reduce_helper<uint64_t>(value, use_local_comm, MPI_UINT64_T, MPI_SUM);
 #else
         return value;
 #endif
     }
 
-    template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
-    inline T MPIUtils::max_across_ranks(const T& value, const bool use_local_comm)
+    inline double MPIUtils::sum_across_ranks(const double& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("sum_across_ranks");
+        return all_reduce_helper<double>(value, use_local_comm, MPI_DOUBLE, MPI_SUM);
+#else
+        return value;
+#endif
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // sum_to_root
+
+    inline int32_t MPIUtils::sum_to_root(const int32_t& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("sum_to_root");
+        return reduce_helper<int32_t>(value, use_local_comm, MPI_INT32_T, MPI_SUM);
+#else
+        return value;
+#endif
+    }
+
+    inline uint32_t MPIUtils::sum_to_root(const uint32_t& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("sum_to_root");
+        return reduce_helper<uint32_t>(value, use_local_comm, MPI_UINT32_T, MPI_SUM);
+#else
+        return value;
+#endif
+    }
+
+    inline int64_t MPIUtils::sum_to_root(const int64_t& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("sum_to_root");
+        return reduce_helper<int64_t>(value, use_local_comm, MPI_INT64_T, MPI_SUM);
+#else
+        return value;
+#endif
+    }
+
+    inline uint64_t MPIUtils::sum_to_root(const uint64_t& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("sum_to_root");
+        return reduce_helper<uint64_t>(value, use_local_comm, MPI_UINT64_T, MPI_SUM);
+#else
+        return value;
+#endif
+    }
+
+    inline double MPIUtils::sum_to_root(const double& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("sum_to_root");
+        return reduce_helper<double>(value, use_local_comm, MPI_DOUBLE, MPI_SUM);
+#else
+        return value;
+#endif
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // max_across_ranks
+
+    inline int32_t MPIUtils::max_across_ranks(const int32_t& value, const bool use_local_comm)
     {
 #ifdef HAVE_MPI
         VERIFY_INIT("max_across_ranks");
+        return all_reduce_helper<int32_t>(value, use_local_comm, MPI_INT32_T, MPI_MAX);
+#else
+        return value;
+#endif
+    }
 
-        // Select which comm to use for all MPI operations in this call
-        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
-        
-        T max_value;
-        MPI_Allreduce(&value, &max_value, sizeof(T), MPI_CHAR, MPI_MAX, comm);
-        return max_value;
+    inline uint32_t MPIUtils::max_across_ranks(const uint32_t& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("max_across_ranks");
+        return all_reduce_helper<uint32_t>(value, use_local_comm, MPI_UINT32_T, MPI_MAX);
+#else
+        return value;
+#endif
+    }
+
+    inline int64_t MPIUtils::max_across_ranks(const int64_t& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("max_across_ranks");
+        return all_reduce_helper<int64_t>(value, use_local_comm, MPI_INT64_T, MPI_MAX);
+#else
+        return value;
+#endif
+    }
+
+    inline uint64_t MPIUtils::max_across_ranks(const uint64_t& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("max_across_ranks");
+        return all_reduce_helper<uint64_t>(value, use_local_comm, MPI_UINT64_T, MPI_MAX);
+#else
+        return value;
+#endif
+    }
+
+    inline double MPIUtils::max_across_ranks(const double& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("max_across_ranks");
+        return all_reduce_helper<double>(value, use_local_comm, MPI_DOUBLE, MPI_MAX);
 #else
         return value;
 #endif
