@@ -3,7 +3,17 @@
 #include <array>
 #include <iostream>
 #include <sstream>
+#include <utility>
 #include <vector>
+
+struct Foo
+{
+    template<typename SerializerType>
+    void serialize(SerializerType& s) const
+    {
+        std::cout << "serialize called" << std::endl;
+    }
+};
 
 int main()
 {
@@ -13,11 +23,12 @@ int main()
     utility::JSONSerializer to_json_cout(std::cout);
 
     std::vector<double> list_of_doubles = { 0., 1., 3.};
+    Foo foo;
 
     counter(list_of_doubles);
     to_binary_ss(list_of_doubles);
     to_json_cout(utility::named_ref("list_of_doubles", list_of_doubles));
-    to_json_cout(utility::named_value("ex_int", 1));
+    to_json_cout(utility::named_value("foo", foo));
 
     to_json_cout.write_out();
     to_json_cout.reset();

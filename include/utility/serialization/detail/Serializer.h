@@ -149,9 +149,12 @@ struct has_serialize
     // Relies on SPINAE in case you are not familiar.
     template<typename C>
     static constexpr auto test(...) -> std::false_type;
+    // Note: static_cast<void>(...) provided here in the very unlikely situation where the return
+    // type has overloaded the comma operator.
     template<typename C>
     static constexpr auto test(int)
-      -> decltype(std::declval<T>().serialize(std::declval<SerializerBase&>()), std::true_type());
+      -> decltype(static_cast<void>(std::declval<C>().serialize(std::declval<SerializerBase&>())),
+                  std::true_type());
 
     using result_type       = decltype(test<T>(0));
     static const bool value = result_type::value;
@@ -161,19 +164,22 @@ struct has_serialize
 /// utility::Serializer object.
 ///
 /// Usage: utility::has_deserialize<T>::value will return 1 if the method exists, 0 otherwise.
-template<typename T>
+template <class T>
 struct has_deserialize
 {
     // One of these two test method will exist, depending on if
-    // std::declval<T>().deserialize(std::declval<utility::Serializer&>()) is valid.  If T contains
-    // a serialize method that can take a utility::Serializer object, then it succeeds and the
-    // return type becomes std::true_type, otherwise, the return type is std::false_type as fall
-    // back. Relies on SPINAE in case you are not familiar.
+    // std::declval<T>().deserialize(std::declval<utility::Serializer&>()) is valid.  If T contains a
+    // deserialize method that can take a utility::Serializer object, then it succeeds and the return
+    // type becomes std::true_type, otherwise, the return type is std::false_type as fall back.
+    // Relies on SPINAE in case you are not familiar.
     template<typename C>
     static constexpr auto test(...) -> std::false_type;
+    // Note: static_cast<void>(...) provided here in the very unlikely situation where the return
+    // type has overloaded the comma operator.
     template<typename C>
     static constexpr auto test(int)
-      -> decltype(std::declval<T>().deserialize(std::declval<SerializerBase&>()), std::true_type());
+      -> decltype(static_cast<void>(std::declval<C>().deserialize(std::declval<SerializerBase&>())),
+                  std::true_type());
 
     using result_type       = decltype(test<T>(0));
     static const bool value = result_type::value;
@@ -182,34 +188,36 @@ struct has_deserialize
 /// A fall back so that when all attempts of calling a serialize method/function fails, the
 /// developer recieves a useful error.
 template<typename SerializerType, typename T>
-void serialize(SerializerType&, const T&)
+void serialize(SerializerType& s, const T& v)
 {
-    static_assert(false,
-                  "A serialize function does not exist type T.  This probabely occurred when "
-                  "type T was involved in a serialization but: 1) T is not a fundamental type, "
-                  "2) T does not have a serialize method implemented, and "
-                  "3) no specialization of utility::serialize() was implemented for T.  "
-                  "One of these much be true to enable serialization.");
+    // If you received a compiler error here, then a serialize function does not exist for type T.
+    // This probabely occurred when type T was involved in a serialization but:
+    // 1) T is not a fundamental type,
+    // 2) T does not have a serialize method implemented, and
+    // 3) no specialization of utility::serialize() was implemented for T.
+    // One of these much be true to enable serialization.
+    v.does_not_have_serialize_method();
 }
 
 /// A fall back so that when all attempts of calling a deserialize method/function fails, the
 /// developer recieves a useful error.
 template<typename SerializerType, typename T>
-void deserialize(SerializerType&, const T&)
+void deserialize(SerializerType& s, const T& v)
 {
-    static_assert(false,
-                  "A deserialize function does not exist type T.  This probabely occurred when "
-                  "type T was involved in a deserialization but: 1) T is not a fundamental type, "
-                  "2) T does not have a deserialize method implemented, and "
-                  "3) no specialization of utility::deserialize() was implemented for T.  "
-                  "One of these much be true to enable deserialization.");
+    // If you received a compiler error here, then a deserialize function does not exist 
+    // for type T. This probabely occurred when type T was involved in a deserialization but:
+    // 1) T is not a fundamental type,
+    // 2) T does not have a deserialize method implemented, and
+    // 3) no specialization of utility::deserialize() was implemented for T.
+    // One of these much be true to enable deserialization.
+    v.does_not_have_deserialize_method();
 }
 
 /// std::array serialize(...) specialization
 template<typename SerializerType, typename T, size_t Size>
 void serialize(SerializerType& s, const std::array<T, Size>& arr)
 {
-    s(Slice<const T>(arr.data(), arr.size()));
+    s(named_value("data", Slice<const T>(arr.data(), arr.size())));
 }
 
 /// std::array deserialize(...) specialization
@@ -223,7 +231,8 @@ void deserialize(SerializerType& s, std::array<T, Size>& arr)
 template<typename SerializerType, typename T>
 void serialize(SerializerType& s, const std::vector<T>& vec)
 {
-    s(vec.size(), Slice<const T>(vec.data(), vec.size()));
+    s(named_value("size", vec.size()),
+      named_value("data", Slice<const T>(vec.data(), vec.size())));
 }
 
 /// std::vector deserialize(...) specialization
