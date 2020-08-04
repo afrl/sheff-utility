@@ -8,6 +8,8 @@
 #    include <mpi.h>
 #else
 using MPI_Comm = int;
+using MPI_Datatype = int;
+using MPI_Op = int;
 #endif
 
 #include <atomic>
@@ -979,7 +981,7 @@ namespace utility
         return recvbuffer;
 
 #else
-        return value;
+        return T();
 #endif
     }
 
