@@ -11,24 +11,45 @@ namespace utility
 template<typename T>
 struct Slice
 {
-    T* const data;
-    const std::size_t size;
+    Slice(T* begin_a, std::size_t n_objects_a)
+        : ptr(begin_a)
+        , n_objects(n_objects_a)
+    {
+    }
 
     T* begin() const
     {
-        return data;
+        return ptr;
     }
 
     const T* end() const
     {
-        return data + size;
+        return ptr + n_objects;
     }
 
-    Slice(T* begin_a, std::size_t size_a)
-      : data(begin_a)
-      , size(size_a)
+    std::size_t size() const
     {
+        return n_objects;
     }
+
+    T* data()
+    {
+        return ptr;
+    }
+
+    const T* data() const
+    {
+        return ptr;
+    }
+
+    T& operator[](std::size_t i)
+    {
+        return ptr[i];
+    }
+
+  private:
+    T* const ptr;
+    const std::size_t n_objects;
 };
 
 template<typename T>

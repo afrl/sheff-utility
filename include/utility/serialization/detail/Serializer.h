@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utility/serialization/detail/NamedValue.h"
+#include "utility/serialization/NamedValue.h"
 #include "utility/Slice.h"
 
 #include <array>

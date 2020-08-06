@@ -41,7 +41,7 @@ class SerialByteCounter : public Serializer<SerialByteCounter>
     template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
     inline void process(const Slice<T>& slice, const std::string& name = "")
     {
-        n_bytes_ += sizeof(T) * slice.size;
+        n_bytes_ += sizeof(T) * slice.size();
     }
 
     /// The fall back for non-fundamental types.  This passes the argument on to the
