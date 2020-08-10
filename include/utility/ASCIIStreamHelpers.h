@@ -1,7 +1,9 @@
 #pragma once
 
-#include "StringUtils.h"
+#include "utility/StringUtils.h"
+#include "utility/Exceptions.h"
 
+#include <assert.h>
 #include <fstream>
 
 namespace utility
@@ -14,6 +16,7 @@ namespace utility
         {
             throw _UTIL_MSG_EXCEPT("File stream not open.");
         }
+        assert(substr != "");
 
         std::string line = "";
         do
@@ -21,7 +24,7 @@ namespace utility
             getline(in, line);
             if (in.eof())
             {
-                throw _UTIL_MSG_EXCEPT("Substring '" + substr + "' not found in file.");
+                return "";
             }
         } while (line.find(substr) == std::string::npos && !in.eof());
         return line;
