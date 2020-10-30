@@ -1,7 +1,7 @@
 #pragma once
 
-#include "utility/serialization/NamedValue.h"
 #include "utility/Slice.h"
+#include "utility/serialization/NamedValue.h"
 
 #include <array>
 #include <string>
@@ -78,7 +78,6 @@ class Serializer : SerializerBase
         static_cast<DerivedSerializer*>(this)->process(v.value, v.name);
     }
 
-
     /// If the derived serializer was not able to handle the type in its process method,
     /// it will call this method for non-fundamental types that have a .serialize method.
     template<typename T,
@@ -105,7 +104,6 @@ class Serializer : SerializerBase
     {
         serialize(*this, v);
     }
-
 
     /// If the derived deserializer was not able to handle the type in its process method,
     /// it will call this method for non-fundamental types that have a .deserialize method.
@@ -164,14 +162,14 @@ struct has_serialize
 /// utility::Serializer object.
 ///
 /// Usage: utility::has_deserialize<T>::value will return 1 if the method exists, 0 otherwise.
-template <class T>
+template<class T>
 struct has_deserialize
 {
     // One of these two test method will exist, depending on if
-    // std::declval<T>().deserialize(std::declval<utility::Serializer&>()) is valid.  If T contains a
-    // deserialize method that can take a utility::Serializer object, then it succeeds and the return
-    // type becomes std::true_type, otherwise, the return type is std::false_type as fall back.
-    // Relies on SPINAE in case you are not familiar.
+    // std::declval<T>().deserialize(std::declval<utility::Serializer&>()) is valid.  If T contains
+    // a deserialize method that can take a utility::Serializer object, then it succeeds and the
+    // return type becomes std::true_type, otherwise, the return type is std::false_type as fall
+    // back. Relies on SPINAE in case you are not familiar.
     template<typename C>
     static constexpr auto test(...) -> std::false_type;
     // Note: static_cast<void>(...) provided here in the very unlikely situation where the return
@@ -187,7 +185,9 @@ struct has_deserialize
 
 /// A fall back so that when all attempts of calling a serialize method/function fails, the
 /// developer recieves a useful error.
-template<typename SerializerType, typename T>
+template<typename SerializerType,
+         typename T,
+         typename std::enable_if<!std::is_enum<T>::value, T>::type* = nullptr>
 void serialize(SerializerType& s, const T& v)
 {
     // If you received a compiler error here, then a serialize function does not exist for type T.
@@ -201,16 +201,36 @@ void serialize(SerializerType& s, const T& v)
 
 /// A fall back so that when all attempts of calling a deserialize method/function fails, the
 /// developer recieves a useful error.
-template<typename SerializerType, typename T>
+template<typename SerializerType,
+         typename T,
+         typename std::enable_if<!std::is_enum<T>::value, T>::type* = nullptr>
 void deserialize(SerializerType& s, const T& v)
 {
-    // If you received a compiler error here, then a deserialize function does not exist 
+    // If you received a compiler error here, then a deserialize function does not exist
     // for type T. This probabely occurred when type T was involved in a deserialization but:
     // 1) T is not a fundamental type,
     // 2) T does not have a deserialize method implemented, and
     // 3) no specialization of utility::deserialize() was implemented for T.
     // One of these much be true to enable deserialization.
     v.does_not_have_deserialize_method();
+}
+
+/// std::string serialize(...) specialization
+template<typename SerializerType>
+void serialize(SerializerType& s, const std::string& str)
+{
+    s(named_value("n_chars", str.size()));
+    s(named_value("chars", Slice<const char>(str.data(), str.size())));
+}
+
+/// std::string deserialize(...) specialization
+template<typename SerializerType>
+void deserialize(SerializerType& s, std::string& str)
+{
+    std::string::size_type n_chars;
+    s(n_chars);
+    str.resize(n_chars);
+    s(Slice<char>(str.data(), str.size()));
 }
 
 /// std::array serialize(...) specialization
@@ -227,12 +247,31 @@ void deserialize(SerializerType& s, std::array<T, Size>& arr)
     s(Slice<T>(arr.data(), arr.size()));
 }
 
+/// enum class serialize(...) specialization
+template<typename SerializerType,
+         typename T,
+         typename std::enable_if<std::is_enum<T>::value, T>::type* = nullptr>
+void serialize(SerializerType& s, const T& enum_value)
+{
+    using under_type = typename std::underlying_type<T>::type;
+    s(reinterpret_cast<const under_type&>(enum_value));
+}
+
+/// enum class deserialize(...) specialization
+template<typename SerializerType,
+         typename T,
+         typename std::enable_if<std::is_enum<T>::value, T>::type* = nullptr>
+void deserialize(SerializerType& s, T& enum_value)
+{
+    using under_type = typename std::underlying_type<T>::type;
+    s(reinterpret_cast<under_type&>(enum_value));
+}
+
 /// std::vector serialize(...) specialization
 template<typename SerializerType, typename T>
 void serialize(SerializerType& s, const std::vector<T>& vec)
 {
-    s(named_value("size", vec.size()),
-      named_value("data", Slice<const T>(vec.data(), vec.size())));
+    s(named_value("size", vec.size()), named_value("data", Slice<const T>(vec.data(), vec.size())));
 }
 
 /// std::vector deserialize(...) specialization
@@ -243,5 +282,52 @@ void deserialize(SerializerType& s, std::vector<T>& vec)
     s(vec_size);
     vec.resize(vec_size);
     s(Slice<T>(vec.data(), vec.size()));
+}
+
+/// utility::Slice<T> serialize(...) specialization for generic slices of types
+template<typename SerializerType, typename T>
+void serialize(SerializerType& s, const utility::Slice<const T>& slice)
+{
+    for (auto i : utility::range(slice.size()))
+    {
+        s(named_ref(std::to_string(i), slice[i]));
+    }
+}
+
+/// utility::Slice<T> serialize(...) specialization for generic slices of types
+template<typename SerializerType, typename T>
+void serialize(SerializerType& s, const utility::Slice<T>& slice)
+{
+    for (auto i : utility::range(slice.size()))
+    {
+        s(named_ref(std::to_string(i), slice[i]));
+    }
+}
+
+/// utility::Slice<T> deserialize(...) specialization for generic slices of types
+/// Assumes the memory has already been allocated to an appropriate size.
+template<typename SerializerType, typename T>
+void deserialize(SerializerType& s, utility::Slice<T>& slice)
+{
+    for (auto& obj : slice)
+    {
+        s(obj);
+    }
+}
+
+/// utility::Slice<std::array> serialize(...) specialization
+/// Takes advantage of fact that a contiguous array of std::array objects will itself form a single
+/// 1D continguous array.
+template<typename SerializerType, typename T, size_t Size>
+void serialize(SerializerType& s, const utility::Slice<const std::array<T, Size>>& slice_of_arr)
+{
+    s(named_value("data", Slice<const T>(slice_of_arr.data()->data(), slice_of_arr.size() * Size)));
+}
+
+/// utility::Slice<std::array> deserialize(...) specialization
+template<typename SerializerType, typename T, size_t Size>
+void deserialize(SerializerType& s, utility::Slice<std::array<T, Size>>& slice_of_arr)
+{
+    s(Slice<T>(slice_of_arr.data()->data(), slice_of_arr.size() * Size));
 }
 }

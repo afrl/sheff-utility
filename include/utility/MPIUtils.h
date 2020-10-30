@@ -1316,7 +1316,7 @@ namespace utility
 
         // Make receive requests
         std::vector<MPI_Request> receive_requests(n_source_ranks);
-        for (auto i : utility::range_from_zero(n_source_ranks))
+        for (auto i : utility::range(n_source_ranks))
         {
             MPI_Irecv(
                 &receive_data[receive_rank_offsets[i]],
@@ -1330,7 +1330,7 @@ namespace utility
 
         // Wait for receive requests to be complete
         MPI_Status status;
-        for (auto i : utility::range_from_zero(n_source_ranks))
+        for (auto i : utility::range(n_source_ranks))
         {
             MPI_Wait(&receive_requests[i], &status);
         }

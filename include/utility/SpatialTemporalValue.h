@@ -38,6 +38,7 @@ namespace utility
         const std::string& get_function() const;
 
     private:
+        second_party_math::ExprtkSymbolTable symbol_table_;
         second_party_math::ExprtkExpression expression_;
         std::string function_string_;
         double x_cached_;

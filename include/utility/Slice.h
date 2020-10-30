@@ -11,11 +11,18 @@ namespace utility
 template<typename T>
 struct Slice
 {
-    Slice(T* begin_a, std::size_t n_objects_a)
-        : ptr(begin_a)
-        , n_objects(n_objects_a)
+    Slice()
+      : ptr(nullptr)
+      , n_objects(0)
     {
     }
+    Slice(T* begin_a, std::size_t n_objects_a)
+      : ptr(begin_a)
+      , n_objects(n_objects_a)
+    {
+    }
+    Slice(const Slice&) = default;
+    Slice<T>& operator=(const Slice<T>&) = default;
 
     T* begin() const
     {
@@ -47,9 +54,34 @@ struct Slice
         return ptr[i];
     }
 
+    const T& operator[](std::size_t i) const
+    {
+        return ptr[i];
+    }
+
+    /// Accessor that is redudant compared to operator[], but is needed for Python.
+    const T& get(std::size_t i) const
+    {
+        return ptr[i];
+    }
+
+    bool operator==(const Slice<T>& other) const
+    {
+        if (n_objects != other.n_objects)
+        {
+            return false;
+        }
+        bool comparison = true;
+        for (auto i : utility::range(n_objects))
+        {
+            comparison &= ptr[i] == other.ptr[i];
+        }
+        return comparison;
+    }
+
   private:
-    T* const ptr;
-    const std::size_t n_objects;
+    T* ptr;
+    std::size_t n_objects;
 };
 
 template<typename T>
@@ -64,12 +96,24 @@ Slice<const T> slice(const std::vector<T>& vec)
     return Slice<const T> { vec.data(), vec.size() };
 }
 
+template<typename T, typename std::enable_if<!std::is_enum<T>::value, T>::type* = nullptr>
+Slice<T> slice(std::vector<T>& vec)
+{
+    return Slice<T> { vec.data(), vec.size() };
+}
+
 template<typename T, typename std::enable_if<std::is_enum<T>::value, T>::type* = nullptr>
 Slice<const typename std::underlying_type<T>::type> slice(const std::vector<T>& vec)
 {
     using under_type = typename std::underlying_type<T>::type;
-    return Slice<const under_type> { reinterpret_cast<const under_type*>(vec.data()),
-                            vec.size() };
+    return Slice<const under_type> { reinterpret_cast<const under_type*>(vec.data()), vec.size() };
+}
+
+template<typename T, typename std::enable_if<std::is_enum<T>::value, T>::type* = nullptr>
+Slice<typename std::underlying_type<T>::type> slice(std::vector<T>& vec)
+{
+    using under_type = typename std::underlying_type<T>::type;
+    return Slice<under_type> { reinterpret_cast<under_type*>(vec.data()), vec.size() };
 }
 
 template<typename T, int DIM>

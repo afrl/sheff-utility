@@ -4,6 +4,7 @@ find_package(SecondPartyMath CONFIG REQUIRED HINTS
 find_package(nlohmann_json 3.2.0 CONFIG REQUIRED HINTS 
   "${CMAKE_SOURCE_DIR}/../third_party/json_install_dir" "${CMAKE_SOURCE_DIR}/../../third_party/json_install_dir" "${CMAKE_SOURCE_DIR}/modules/third_party/json_install_dir")
 
+set(UTILITY_INC_DIR "@UTILITY_INCLUDE@")
 
 if(NOT TARGET Utility::Utility)
 	get_filename_component(UTILITY_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)

@@ -28,9 +28,13 @@ namespace utility
         /// indicating if an item was actually inserted.
         bool insert(const T& val);
 
+        /// Returns a reference to underlying vector.
+        const std::vector<T>& get() const;
+
         /// Sorts the container's items based on value and returns
         /// a const reference to the sorted vector.
         const std::vector<T>& get_sorted();
+
         auto begin() const { return v.begin(); }
         auto end() const { return v.end(); }
 
@@ -51,6 +55,12 @@ namespace utility
         }
         v.push_back(val);
         return true;
+    }
+
+    template <class T>
+    inline const std::vector<T>& VectorSet<T>::get() const
+    {
+        return v;
     }
 
     template<class T>

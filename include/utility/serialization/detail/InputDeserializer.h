@@ -38,7 +38,7 @@ class InputDeserializer : public Serializer<InputDeserializer>
     template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
     inline void process(Slice<T> slice, const std::string& name = "")
     {
-        in_.read(reinterpret_cast<char* const>(slice.data()), sizeof(T) * slice.size());
+        in_.read(reinterpret_cast<char*>(slice.data()), sizeof(T) * slice.size());
     }
 
     /// The fall back for non-fundamental types.  This passes the argument on to the
