@@ -145,10 +145,9 @@ inline DynamicArray<T, SizeType>::DynamicArray(const SizeType num_objects)
     {
         resize_array(num_objects);
 
-        SizeType pos = 0;
-        for (auto& obj : objects)
+        for (SizeType i = 0; i < num_objects; i++)
         {
-            std::allocator_traits<std::allocator<T>>::construct(allocator_, objects_ + pos++);
+            std::allocator_traits<std::allocator<T>>::construct(allocator_, objects_ + i);
         }
     }
 }

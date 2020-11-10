@@ -1,55 +1,87 @@
 #pragma once
 
-#include <functional>
-#include <utility>
+#include <algorithm>  // std::stable_sort
+#include <functional> // std::hash
+#include <numeric>    // std::iota
+#include <utility>    // std::pair
 
 namespace utility
 {
-    struct hash {
-    public:
-        template <typename T, typename U>
-        std::size_t operator()(const std::pair<T, U>& x) const
-        {
-            return utility::hash()(x.first, x.second);
-        }
+/// Creates a combined hash for a homogeneous std::pair.
+template<typename T>
+std::size_t hash(const std::pair<T, T>& x)
+{
+    return hash(x.first, x.second);
+}
 
-        /// The earlier implementation of the hash combination using the XOR
-        /// operator was too weak (really weak).  Collisions were common.  This
-        /// version of the hash combine will be order sensitive, and will greatly
-        /// reduce collisions.  In fact, the hash should be order sensitive, so
-        /// this fixes that bug as well as collitions of completely different
-        /// combinations.
-        template <typename T, typename U>
-        std::size_t operator()(const T& x, const U& y) const
-        {
-            auto hash_x = std::hash<T>()(x);
-            return std::hash<T>()(y) + 0x9e3779b9 + (hash_x << 6) + (hash_x >> 2);
-        }
-    };
+/// Creates a combined hash for two objects of the same type.
+template<typename T>
+std::size_t hash(const T& x, const T& y)
+{
+    auto hash_x = std::hash<T>()(x);
+    return std::hash<T>()(y) + 0x9e3779b9 + (hash_x << 6) + (hash_x >> 2);
+}
 
-    // Theoretically, the XOR order shouldn't matter, but we can ensure consistency by 
-    // sorting first. 
-    // NOTE: This will cause an error if the types you want to compare aren't compatible.
-    struct hash_sorted {
-    public:
-        template <typename T, typename U>
-        std::size_t operator()(const std::pair<T, U>& x) const
-        {
-            return utility::hash_sorted()(x.first, x.second);
-        }
+/// Creates a combined hash for a list of objects in a container.
+template<typename ContainerType>
+std::size_t hash(const ContainerType& vec)
+{
+    std::size_t seed = vec.size();
+    for (auto& i : vec)
+    {
+        seed ^= std::hash<std::size_t>()((std::size_t)i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+    return seed;
+}
 
-        template <typename T, typename U>
-        std::size_t operator()(const T& x, const U& y) const
-        {
-            if (x < y)
-            {
-                return utility::hash()(x, y);
-            }
-            else
-            {
-                return utility::hash()(y, x);
-            }
-        }
-    };
+/// Creates a combined hash for a homogeneous std::pair as if they were sorted, so the hash is
+/// insentive to order.
+template<typename T>
+std::size_t hash_sorted(const std::pair<T, T>& x)
+{
+    return hash_sorted(x.first, x.second);
+}
+
+/// Creates a combined hash for two objects of the same type as if they were sorted, so the hash is
+/// insentive to order.
+template<typename T>
+std::size_t hash_sorted(const T& x, const T& y)
+{
+    if (x < y)
+    {
+        return utility::hash(x, y);
+    }
+    else
+    {
+        return utility::hash(y, x);
+    }
+}
+
+/// Creates a combined hash for a list of objects in a container as if it were sorted, so the hash
+/// is insentive to order.
+template<typename ContainerType>
+std::size_t hash_sorted(const ContainerType& vec)
+{
+    std::vector<std::size_t> hashes;
+    hashes.reserve(vec.size());
+    for (auto& obj : vec)
+    {
+        hashes.push_back(std::hash<std::size_t>()((std::size_t)obj));
+    }
+
+    std::vector<std::size_t> sorted_indices(hashes.size());
+    std::iota(sorted_indices.begin(), sorted_indices.end(), 0);
+    std::stable_sort(sorted_indices.begin(), sorted_indices.end(), [&vec](size_t i1, size_t i2) {
+        return vec[i1] < vec[i2];
+    });
+
+    std::size_t seed = vec.size();
+    for (auto& i : sorted_indices)
+    {
+        seed ^= hashes[i] + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+
+    return seed;
+}
 
 }

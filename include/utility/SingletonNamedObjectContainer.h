@@ -38,6 +38,13 @@ struct SingletonNamedObjectContainerRef
     {
     }
 
+    /// @brief Returns whether the reference is null, which is the case if the default constructor
+    /// was called but the index as not set.
+    bool is_null() const
+    {
+        return index == UNINITIALIZED_INDEX;
+    }
+
     /// @brief Provides convenient access (similar to std::reference_wrapper) to the object in
     /// the templated SingletonNamedObjectContainer.
     const T& get() const

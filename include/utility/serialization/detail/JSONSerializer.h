@@ -31,6 +31,11 @@ class JSONSerializer : public Serializer<JSONSerializer>
         }
     }
 
+    const json& json_object() const
+    {
+        return j_;
+    }
+
     void write_out()
     {
         out_ << j_.dump(4) << std::endl;
@@ -92,4 +97,14 @@ class JSONSerializer : public Serializer<JSONSerializer>
         object_stack_.pop_back();
     }
 };
+
+template<typename... Args>
+static nlohmann::json to_json(Args&&... args)
+{
+    std::stringstream ss;
+    JSONSerializer json_serializer(ss);
+    json_serializer(std::forward<Args>(args)...);
+    return json_serializer.json_object();
+}
+
 }

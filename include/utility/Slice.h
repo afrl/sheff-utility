@@ -29,7 +29,7 @@ struct Slice
         return ptr;
     }
 
-    const T* end() const
+    T* end() const
     {
         return ptr + n_objects;
     }
