@@ -65,6 +65,18 @@ struct Slice
         return ptr[i];
     }
 
+    bool contains(const T& obj)
+    {
+        for (auto i : utility::range(n_objects))
+        {
+            if (ptr[i] == obj)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool operator==(const Slice<T>& other) const
     {
         if (n_objects != other.n_objects)
