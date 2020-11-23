@@ -51,9 +51,6 @@ include(${CMAKE_SOURCE_DIR}/cmake/CommonInputChecks.cmake)
 # Declare dependencies #
 ########################
 
-
-find_package(SecondPartyMath CONFIG REQUIRED HINTS 
-  "${CMAKE_SOURCE_DIR}/../second_party/second_party_math/install_dir" "${CMAKE_SOURCE_DIR}/../second_party_math/install_dir" "${CMAKE_SOURCE_DIR}/modules/second_party/second_party_math/install_dir")
 find_package(nlohmann_json 3.2.0 CONFIG REQUIRED HINTS 
   "${CMAKE_SOURCE_DIR}/../third_party/json_install_dir" "${CMAKE_SOURCE_DIR}/../../third_party/json_install_dir" "${CMAKE_SOURCE_DIR}/modules/third_party/json_install_dir")
 
@@ -108,7 +105,6 @@ else()
 endif()
 
 # Link dependencies
-target_link_libraries(utility PUBLIC SecondPartyMath::SecondPartyMath)
 target_link_libraries(utility PUBLIC nlohmann_json::nlohmann_json)
 
 
@@ -123,7 +119,6 @@ endif()
 include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)
 assign_source_group("utility" ${UTILITY_HEADER_LIST})
 assign_source_group("utility" ${UTILITY_SOURCE_LIST})
-assign_source_group_SecondPartyMath()
 
 
 #################################

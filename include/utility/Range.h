@@ -272,6 +272,14 @@ range_proxy<T> range(T end)
     return { T(0), end };
 }
 
+/// Similar to the signature above, but allows static casting to another type, since this
+/// is a consistent needed in the framework.
+template<typename T, typename V>
+range_proxy<T> range(V end)
+{
+    return { T(0), static_cast<T>(end) };
+}
+
 namespace traits {
 
     template <typename C>
