@@ -8,7 +8,7 @@ namespace utility
 {
 /// Inspired by Rust, a slice refers to an array of a dynamic size in a contiguous
 /// region of memory.
-template<typename T>
+template<typename T, typename SizeType = std::size_t>
 struct Slice
 {
     Slice()
@@ -16,13 +16,13 @@ struct Slice
       , n_objects(0)
     {
     }
-    Slice(T* begin_a, std::size_t n_objects_a)
+    Slice(T* begin_a, SizeType n_objects_a)
       : ptr(begin_a)
       , n_objects(n_objects_a)
     {
     }
     Slice(const Slice&) = default;
-    Slice<T>& operator=(const Slice<T>&) = default;
+    Slice<T, SizeType>& operator=(const Slice<T, SizeType>&) = default;
 
     T* begin() const
     {
@@ -34,7 +34,7 @@ struct Slice
         return ptr + n_objects;
     }
 
-    std::size_t size() const
+    SizeType size() const
     {
         return n_objects;
     }
@@ -49,18 +49,18 @@ struct Slice
         return ptr;
     }
 
-    T& operator[](std::size_t i)
+    T& operator[](SizeType i)
     {
         return ptr[i];
     }
 
-    const T& operator[](std::size_t i) const
+    const T& operator[](SizeType i) const
     {
         return ptr[i];
     }
 
     /// Accessor that is redudant compared to operator[], but is needed for Python.
-    const T& get(std::size_t i) const
+    const T& get(SizeType i) const
     {
         return ptr[i];
     }
@@ -93,11 +93,11 @@ struct Slice
 
   private:
     T* ptr;
-    std::size_t n_objects;
+    SizeType n_objects;
 };
 
-template<typename T>
-Slice<T> slice(T* const data, const std::size_t size)
+template<typename T, typename SizeType = std::size_t>
+Slice<T, SizeType> slice(T* const data, const SizeType size)
 {
     return { data, size };
 }

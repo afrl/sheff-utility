@@ -38,8 +38,10 @@ class SerialByteCounter : public Serializer<SerialByteCounter>
 
     /// Counts the number of bytes for a slice.
     /// @param name - (ignored for this serializer type)
-    template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
-    inline void process(const Slice<T>& slice, const std::string& name = "")
+    template<typename T,
+             typename SizeType,
+             typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
+    inline void process(const Slice<T, SizeType>& slice, const std::string& name = "")
     {
         n_bytes_ += sizeof(T) * slice.size();
     }

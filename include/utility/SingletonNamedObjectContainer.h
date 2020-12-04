@@ -1,5 +1,6 @@
 #pragma once
 
+#include "utility/Exceptions.h"
 #include "utility/UniquePtrSlice.h"
 #include "utility/serialization/NamedValue.h"
 
@@ -115,8 +116,12 @@ class SingletonNamedObjectContainer
     const T& get(std::string name);
     /// Access an object by its index.
     const T& get(Index index);
+    /// Get a reference to an object by its name.
+    SingletonNamedObjectContainerRef<T> get_ref(std::string name);
     /// Get a reference to an object by its index.
     SingletonNamedObjectContainerRef<T> get_ref(Index index);
+    /// Returns whether an object with the given name exists in the container.
+    bool contains(const std::string& name);
     /// Query the number of objects in the container.
     Index size() const;
 
@@ -204,14 +209,20 @@ inline typename SingletonNamedObjectContainer<T>::Index SingletonNamedObjectCont
   std::string name)
 {
     std::shared_lock<std::shared_timed_mutex> lock(mutex_);
-    return name_to_index_map_[name];
+    auto find_iter = name_to_index_map_.find(name);
+    _UTIL_ASSERT(find_iter != name_to_index_map_.end(),
+                 "An object with name '" + name + "' did not exist.");
+    return find_iter->second;
 }
 
 template<typename T>
 inline const T& SingletonNamedObjectContainer<T>::get(std::string name)
 {
     std::shared_lock<std::shared_timed_mutex> lock(mutex_);
-    return *objects_[name_to_index_map_[name]];
+    auto find_iter = name_to_index_map_.find(name);
+    _UTIL_ASSERT(find_iter != name_to_index_map_.end(),
+                 "An object with name '" + name + "' did not exist.");
+    return *objects_[find_iter->second];
 }
 
 template<typename T>
@@ -222,9 +233,28 @@ inline const T& SingletonNamedObjectContainer<T>::get(Index index)
 }
 
 template<typename T>
+inline SingletonNamedObjectContainerRef<T> SingletonNamedObjectContainer<T>::get_ref(
+  std::string name)
+{
+    std::shared_lock<std::shared_timed_mutex> lock(mutex_);
+    auto find_iter = name_to_index_map_.find(name);
+    _UTIL_ASSERT(find_iter != name_to_index_map_.end(),
+                 "An object with name '" + name + "' did not exist.");
+    return { find_iter->second };
+}
+
+template<typename T>
 inline SingletonNamedObjectContainerRef<T> SingletonNamedObjectContainer<T>::get_ref(Index index)
 {
     return { index };
+}
+
+template<typename T>
+inline bool SingletonNamedObjectContainer<T>::contains(const std::string& name)
+{
+    std::shared_lock<std::shared_timed_mutex> lock(mutex_);
+    auto find_iter = name_to_index_map_.find(name);
+    return find_iter != name_to_index_map_.end();
 }
 
 template<typename T>

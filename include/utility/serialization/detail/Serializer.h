@@ -230,7 +230,7 @@ void deserialize(SerializerType& s, std::string& str)
     std::string::size_type n_chars;
     s(n_chars);
     str.resize(n_chars);
-    s(Slice<char>(str.data(), str.size()));
+    s(Slice<char, std::string::size_type>(&str[0], str.size()));
 }
 
 /// std::array serialize(...) specialization
@@ -295,8 +295,8 @@ void serialize(SerializerType& s, const utility::Slice<const T>& slice)
 }
 
 /// utility::Slice<T> serialize(...) specialization for generic slices of types
-template<typename SerializerType, typename T>
-void serialize(SerializerType& s, const utility::Slice<T>& slice)
+template<typename SerializerType, typename T, typename SizeType>
+void serialize(SerializerType& s, const utility::Slice<T, SizeType>& slice)
 {
     for (auto i : utility::range(slice.size()))
     {
@@ -306,8 +306,8 @@ void serialize(SerializerType& s, const utility::Slice<T>& slice)
 
 /// utility::Slice<T> deserialize(...) specialization for generic slices of types
 /// Assumes the memory has already been allocated to an appropriate size.
-template<typename SerializerType, typename T>
-void deserialize(SerializerType& s, utility::Slice<T>& slice)
+template<typename SerializerType, typename T, typename SizeType>
+void deserialize(SerializerType& s, utility::Slice<T, SizeType>& slice)
 {
     for (auto& obj : slice)
     {

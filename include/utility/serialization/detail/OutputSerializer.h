@@ -2,6 +2,7 @@
 
 #include "Serializer.h"
 #include "utility/Slice.h"
+#include "utility/SliceList.h"
 
 #include <ostream>
 
@@ -36,8 +37,10 @@ class OutputSerializer : public Serializer<OutputSerializer>
 
     /// Serializes a slice.
     /// @param name - (ignored for this serializer type)
-    template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
-    inline void process(const Slice<T>& slice, const std::string& name = "")
+    template<typename T,
+             typename SizeType,
+             typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
+    inline void process(const Slice<T, SizeType>& slice, const std::string& name = "")
     {
         out_.write(reinterpret_cast<const char*>(slice.data()), sizeof(T) * slice.size());
     }
