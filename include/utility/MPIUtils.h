@@ -218,6 +218,14 @@ namespace utility
         static uint64_t max_across_ranks(const uint64_t& value, const bool use_local_comm = true);
         static double max_across_ranks(const double& value, const bool use_local_comm = true);
 
+        /// Computes the min of a scalar value across all ranks in the the respective communicator
+        /// (local or global) and returns the value (on every rank).
+        static int32_t min_across_ranks(const int32_t& value, const bool use_local_comm = true);
+        static uint32_t min_across_ranks(const uint32_t& value, const bool use_local_comm = true);
+        static int64_t min_across_ranks(const int64_t& value, const bool use_local_comm = true);
+        static uint64_t min_across_ranks(const uint64_t& value, const bool use_local_comm = true);
+        static double min_across_ranks(const double& value, const bool use_local_comm = true);
+
         /// Exchanges a single fundamental object with specific ranks.  This is useful for scattering data
         /// to adjacent ranks.
         /// \param n_destination_ranks - the number of ranks to send data to
@@ -1189,6 +1197,59 @@ namespace utility
 #ifdef HAVE_MPI
         VERIFY_INIT("max_across_ranks");
         return all_reduce_helper<double>(value, use_local_comm, MPI_DOUBLE, MPI_MAX);
+#else
+        return value;
+#endif
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // min_across_ranks
+
+    inline int32_t MPIUtils::min_across_ranks(const int32_t& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("min_across_ranks");
+        return all_reduce_helper<int32_t>(value, use_local_comm, MPI_INT32_T, MPI_MIN);
+#else
+        return value;
+#endif
+    }
+
+    inline uint32_t MPIUtils::min_across_ranks(const uint32_t& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("min_across_ranks");
+        return all_reduce_helper<uint32_t>(value, use_local_comm, MPI_UINT32_T, MPI_MIN);
+#else
+        return value;
+#endif
+    }
+
+    inline int64_t MPIUtils::min_across_ranks(const int64_t& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("min_across_ranks");
+        return all_reduce_helper<int64_t>(value, use_local_comm, MPI_INT64_T, MPI_MIN);
+#else
+        return value;
+#endif
+    }
+
+    inline uint64_t MPIUtils::min_across_ranks(const uint64_t& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("min_across_ranks");
+        return all_reduce_helper<uint64_t>(value, use_local_comm, MPI_UINT64_T, MPI_MIN);
+#else
+        return value;
+#endif
+    }
+
+    inline double MPIUtils::min_across_ranks(const double& value, const bool use_local_comm)
+    {
+#ifdef HAVE_MPI
+        VERIFY_INIT("min_across_ranks");
+        return all_reduce_helper<double>(value, use_local_comm, MPI_DOUBLE, MPI_MIN);
 #else
         return value;
 #endif

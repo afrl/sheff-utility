@@ -135,6 +135,7 @@ inline DynamicArray<T, SizeType>::DynamicArray()
 
 template<typename T, typename SizeType>
 inline DynamicArray<T, SizeType>::DynamicArray(const SizeType num_objects)
+  : DynamicArray()
 {
     if (num_objects == 0)
     {
@@ -217,7 +218,7 @@ inline DynamicArray<T, SizeType>::DynamicArray(const DynamicArray& arg)
         for (SizeType i = 0; i < size_; i++)
         {
             std::allocator_traits<std::allocator<T>>::construct(allocator_,
-                                                                objects_ + i++,
+                                                                objects_ + i,
                                                                 arg.objects_[i]);
         }
     }
