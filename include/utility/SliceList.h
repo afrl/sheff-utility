@@ -59,7 +59,7 @@ struct SliceList
     }
 
     /// Accessor that is redudant compared to operator[], but is needed for Python.
-    Slice<const T, const SliceSizeType>& get(ListSizeType i) const
+    Slice<const T, const SliceSizeType> get(ListSizeType i) const
     {
         return Slice<const T, const SliceSizeType>(ptr[i], n_objects_list[i]);
     }

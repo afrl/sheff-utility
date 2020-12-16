@@ -338,3 +338,4 @@ inline auto IOUtils::convert_array(const std::array<ConvertFromType, Size>& src)
 #undef BIN_READ_CONVERT
 #undef BIN_READ_CONVERT_ARR
 }
+#undef _EXCEPTION

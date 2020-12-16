@@ -105,7 +105,7 @@ namespace utility
             const char* caller,
             const std::string& description = "")
         {
-            int depth = get().starts_.size();
+            int depth = (int)get().starts_.size();
             
             get().starts_.push_back({
                     get().counter_++,
@@ -170,7 +170,7 @@ namespace utility
 
                 if (msg.size() > max_line_length)
                 {
-                    max_line_length = msg.size();
+                    max_line_length = (int)msg.size();
                 }
 
                 curr_parent_id = interval.id;
