@@ -198,6 +198,14 @@ class MPIUtils
                                          const std::vector<OffsetType>& offsets,
                                          const bool use_local_comm = true);
 
+    /// Computes the sum of a scalar value for all ranks lower than this rank and returns the
+    /// respective value.
+    static int32_t sum_of_lower_ranks(const int32_t& value, const bool use_local_comm = true);
+    static uint32_t sum_of_lower_ranks(const uint32_t& value, const bool use_local_comm = true);
+    static int64_t sum_of_lower_ranks(const int64_t& value, const bool use_local_comm = true);
+    static uint64_t sum_of_lower_ranks(const uint64_t& value, const bool use_local_comm = true);
+    static double sum_of_lower_ranks(const double& value, const bool use_local_comm = true);
+
     /// Computes the sum of a scalar value across all ranks in the the respective communicator
     /// (local or global) and returns the value on every rank.
     static int32_t sum_across_ranks(const int32_t& value, const bool use_local_comm = true);
@@ -359,6 +367,24 @@ class MPIUtils
         T reduced_value;
         MPI_Allreduce(&value, &reduced_value, 1, mpi_type, mpi_op, comm);
         return reduced_value;
+#else
+        return value;
+#endif
+    }
+
+    template<typename T>
+    static T scan_helper(const T& value,
+                         const bool use_local_comm,
+                         const MPI_Datatype& mpi_type,
+                         const MPI_Op& mpi_op)
+    {
+#ifdef HAVE_MPI
+        // Select which comm to use for all MPI operations in this call
+        MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
+
+        T scan_value;
+        MPI_Scan(&value, &scan_value, 1, mpi_type, mpi_op, comm);
+        return scan_value;
 #else
         return value;
 #endif
@@ -1101,12 +1127,12 @@ inline std::vector<T> MPIUtils::scatter_arrays(const std::vector<T>& data_to_sca
     std::vector<int> offsets_bytes(offsets.size());
     for (int i = 0; i < offsets_bytes.size(); i++)
     {
-        offsets_bytes[i] = offsets[i] * sizeof(T);
+        offsets_bytes[i] = static_cast<int>(offsets[i] * sizeof(T));
     }
     std::vector<int> send_byte_counts(offsets.size() - 1);
     for (int i = 0; i < send_byte_counts.size(); i++)
     {
-        send_byte_counts[i] = (offsets[i + 1] - offsets[i]) * sizeof(T);
+        send_byte_counts[i] = static_cast<int>((offsets[i + 1] - offsets[i]) * sizeof(T));
     }
 
     // Scatter counts so each rank knows how to allocate the recv buffer
@@ -1134,6 +1160,56 @@ inline std::vector<T> MPIUtils::scatter_arrays(const std::vector<T>& data_to_sca
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // sum_across_ranks
+
+inline int32_t MPIUtils::sum_of_lower_ranks(const int32_t& value, const bool use_local_comm)
+{
+#ifdef HAVE_MPI
+    VERIFY_INIT("sum_of_lower_ranks");
+    return MPIUtils::scan_helper<int32_t>(value, use_local_comm, MPI_INT32_T, MPI_SUM) - value;
+#else
+    return 0;
+#endif
+}
+
+inline uint32_t MPIUtils::sum_of_lower_ranks(const uint32_t& value, const bool use_local_comm)
+{
+#ifdef HAVE_MPI
+    VERIFY_INIT("sum_of_lower_ranks");
+    return MPIUtils::scan_helper<uint32_t>(value, use_local_comm, MPI_UINT32_T, MPI_SUM) - value;
+#else
+    return 0;
+#endif
+}
+
+inline int64_t MPIUtils::sum_of_lower_ranks(const int64_t& value, const bool use_local_comm)
+{
+#ifdef HAVE_MPI
+    VERIFY_INIT("sum_of_lower_ranks");
+    return MPIUtils::scan_helper<int64_t>(value, use_local_comm, MPI_INT64_T, MPI_SUM) - value;
+#else
+    return 0;
+#endif
+}
+
+inline uint64_t MPIUtils::sum_of_lower_ranks(const uint64_t& value, const bool use_local_comm)
+{
+#ifdef HAVE_MPI
+    VERIFY_INIT("sum_of_lower_ranks");
+    return MPIUtils::scan_helper<uint64_t>(value, use_local_comm, MPI_UINT64_T, MPI_SUM) - value;
+#else
+    return 0;
+#endif
+}
+
+inline double MPIUtils::sum_of_lower_ranks(const double& value, const bool use_local_comm)
+{
+#ifdef HAVE_MPI
+    VERIFY_INIT("sum_of_lower_ranks");
+    return MPIUtils::scan_helper<double>(value, use_local_comm, MPI_DOUBLE, MPI_SUM) - value;
+#else
+    return 0;
+#endif
+}
 
 inline int32_t MPIUtils::sum_across_ranks(const int32_t& value, const bool use_local_comm)
 {
@@ -1447,7 +1523,8 @@ inline void MPIUtils::exchange_arrays(const int n_destination_ranks,
                                                                           source_ranks,
                                                                           use_local_comm);
 
-    auto total_receive_counts = std::accumulate(receive_counts.begin(), receive_counts.end(), 0);
+    auto total_receive_counts =
+      std::accumulate(receive_counts.begin(), receive_counts.end(), (OffsetType)0);
     receive_data.resize(total_receive_counts);
 
     receive_rank_offsets.clear();

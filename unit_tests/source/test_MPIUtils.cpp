@@ -19,9 +19,7 @@ int main(int argc, char* argv[])
             offsets[i] = 2 * i;
         }
 
-        auto ret = utility::MPIUtils::scatter_arrays(
-            data_to_scatter,
-            offsets);
+        auto ret = utility::MPIUtils::scatter_arrays(data_to_scatter, offsets);
 
         assert(ret.size() == 2);
         assert(ret[0] == 2 * utility::MPIUtils::get_local_rank());
@@ -29,7 +27,7 @@ int main(int argc, char* argv[])
     }
 
     {
-        std::string str = "test";
+        std::string str  = "test";
         auto str_by_rank = utility::MPIUtils::gather_strings_by_rank(str);
 
         if (utility::MPIUtils::is_root())
@@ -46,5 +44,36 @@ int main(int argc, char* argv[])
         }
     }
 
-    return 0; 
+    {
+        int32_t rank_id       = utility::MPIUtils::get_local_rank();
+        auto value            = utility::MPIUtils::sum_of_lower_ranks(rank_id);
+        int32_t correct_value = 0;
+        for (auto i : utility::range(rank_id))
+        {
+            correct_value += i;
+        }
+        assert(value == correct_value);
+    }
+    {
+        uint32_t rank_id       = utility::MPIUtils::get_local_rank();
+        auto value            = utility::MPIUtils::sum_of_lower_ranks(rank_id);
+        uint32_t correct_value = 0;
+        for (auto i : utility::range(rank_id))
+        {
+            correct_value += i;
+        }
+        assert(value == correct_value);
+    }
+    {
+        double rank_id       = utility::MPIUtils::get_local_rank();
+        auto value            = utility::MPIUtils::sum_of_lower_ranks(rank_id);
+        double correct_value = 0;
+        for (auto i : utility::range(rank_id))
+        {
+            correct_value += i;
+        }
+        assert(value == correct_value);
+    }
+
+    return 0;
 }
