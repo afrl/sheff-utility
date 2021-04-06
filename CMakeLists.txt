@@ -3,32 +3,6 @@ cmake_minimum_required( VERSION 3.8 )
 cmake_policy( SET CMP0048 NEW )
 project( UTILITY VERSION 1.0.0 LANGUAGES CXX )
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    # require at least gcc 6.0
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.0)
-        message( FATAL_ERROR "GCC version must be at least 6.0! (Found: ${CMAKE_CXX_COMPILER_VERSION})" )
-    endif()
-endif()
-
-# Set package toolchain location for Linux. To enable efficient switching between
-# toolchains for cross-compiling, we modify the location where CMake looks for 
-# packages using the find_package command by symbolically linking the default location,
-# $HOME/.cmake/packages, to a similar location with the folder name given by the 
-# compiler family. 
-if (UNIX)
-    execute_process(COMMAND "mkdir" "-p" "$ENV{HOME}/.cmake/${CMAKE_CXX_COMPILER_ID}"
-      RESULT_VARIABLE toolchain_res OUTPUT_VARIABLE toolchain_out)
-    if (toolchain_res)
-        message(ERROR "Couldn't create toolchain dir: $ENV{HOME}/.cmake/${CMAKE_CXX_COMPILER_ID} ${toolchain_out}")
-    endif ()
-    execute_process(COMMAND "ln" "-sfn" "$ENV{HOME}/.cmake/${CMAKE_CXX_COMPILER_ID}" "$ENV{HOME}/.cmake/packages"
-      RESULT_VARIABLE toolchain_res OUTPUT_VARIABLE toolchain_out)
-    if (toolchain_res)
-        message(ERROR "Couldn't create toolchain link: $ENV{HOME}/.cmake/packages ${toolchain_out}")
-    endif ()
-endif()
-
-
 # Options
 option( UTILITY_BuildTests        "Build the unit tests." OFF )
 option( UTILITY_USE_MPI "Indicates if the MPI routines should be included in the build." OFF )
@@ -39,37 +13,37 @@ message( STATUS "Gen: ${CMAKE_GENERATOR}, CXX: ${CMAKE_CXX_COMPILER_ID}, Mode: $
 message( STATUS "Tests: ${UTILITY_BuildTests}, FS HACK: ${UTILITY_UseFilesystemHack}" )
 
 # Add cmake dir to module path
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 ##################
 # Checking input #
 ##################
 
-include(${CMAKE_SOURCE_DIR}/cmake/CommonInputChecks.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/CommonInputChecks.cmake)
 
 ########################
 # Declare dependencies #
 ########################
 
 find_package(nlohmann_json 3.2.0 CONFIG REQUIRED HINTS 
-  "${CMAKE_SOURCE_DIR}/../third_party/json_install_dir" "${CMAKE_SOURCE_DIR}/../../third_party/json_install_dir" "${CMAKE_SOURCE_DIR}/modules/third_party/json_install_dir")
+  "${PROJECT_SOURCE_DIR}/../third_party/json_install_dir" "${PROJECT_SOURCE_DIR}/../../third_party/json_install_dir" "${PROJECT_SOURCE_DIR}/modules/third_party/json_install_dir")
 
 
 if( UTILITY_USE_MPI )
     find_package( MPI REQUIRED )
 endif()
 
-################################
+#############################
 # Setting up UTILITY target #
-################################
+#############################
 
 # Set the variables for UTILITY
-set( UTILITY_INCLUDE     ${CMAKE_SOURCE_DIR}/include )
-set( UTILITY_SRC         ${CMAKE_SOURCE_DIR}/source )
+set(UTILITY_INCLUDE     ${PROJECT_SOURCE_DIR}/include)
+set(UTILITY_SRC         ${PROJECT_SOURCE_DIR}/source)
 
-file( GLOB_RECURSE UTILITY_HEADER_LIST "${UTILITY_INCLUDE}/*.h" )
-file( GLOB_RECURSE UTILITY_SOURCE_LIST "${UTILITY_SRC}/*.h" "${UTILITY_SRC}/*.cpp" )
-    
+file(GLOB_RECURSE UTILITY_HEADER_LIST "${UTILITY_INCLUDE}/*.h")
+file(GLOB_RECURSE UTILITY_SOURCE_LIST "${UTILITY_SRC}/*.h" "${UTILITY_SRC}/*.cpp" PARENT_SCOPE)
+
 # Create target
 add_library(utility STATIC)
 # Add the header includes and headers to the library
@@ -86,6 +60,7 @@ target_sources(utility PRIVATE ${UTILITY_SOURCE_LIST})
 add_library(Utility::Utility ALIAS utility)
 # Add C++ 14 flag
 target_compile_features(utility PUBLIC cxx_std_14)
+set_target_properties(utility PROPERTIES FOLDER "sheff")
 
 # Use filesystem if available, otherwise use our hack.
 if( UTILITY_UseFilesystemHack )
@@ -106,8 +81,6 @@ endif()
 
 # Link dependencies
 target_link_libraries(utility PUBLIC nlohmann_json::nlohmann_json)
-
-
 if(UTILITY_USE_MPI AND MPI_FOUND)
     target_compile_definitions(utility PUBLIC HAVE_MPI)
     target_include_directories(utility PUBLIC ${MPI_CXX_INCLUDE_PATH})
@@ -115,11 +88,15 @@ if(UTILITY_USE_MPI AND MPI_FOUND)
     target_compile_options(utility PUBLIC ${MPI_CXX_COMPILE_FLAGS})
 endif()
 
-# Assign source groups
-include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)
-assign_source_group("utility" ${UTILITY_HEADER_LIST})
-assign_source_group("utility" ${UTILITY_SOURCE_LIST})
+###########################
+# Assigning source groups #
+###########################
 
+include("$ENV{SHEFF_TOOLS}/cmake/IncludeSHEFF.cmake")
+register_sources_sheff("utility"
+                       "${UTILITY_HEADER_LIST}"
+                       "${UTILITY_SOURCE_LIST}")
+assign_source_groups_sheff()
 
 #################################
 # Add unit test targets #
@@ -186,5 +163,3 @@ export(
     NAMESPACE Utility::
 )
 
-# Register package in user's package registry
-export(PACKAGE Utility)
