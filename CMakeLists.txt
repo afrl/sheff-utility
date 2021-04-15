@@ -4,13 +4,13 @@ cmake_policy( SET CMP0048 NEW )
 project( UTILITY VERSION 1.0.0 LANGUAGES CXX )
 
 # Options
-option( UTILITY_BuildTests        "Build the unit tests." OFF )
-option( UTILITY_USE_MPI "Indicates if the MPI routines should be included in the build." OFF )
-option( UTILITY_UseFilesystemHack "Use if compiler has included <experimental/filesystem>" OFF )
+option( SHEFF_BuildTests          "Build the unit tests." OFF )
+option( SHEFF_USE_MPI           "Indicates if the MPI routines should be included in the build." OFF )
+option( SHEFF_UseFilesystemHack "Use if compiler has included <experimental/filesystem>" OFF )
 
 # For debugging, print generator, compiler, and options
 message( STATUS "Gen: ${CMAKE_GENERATOR}, CXX: ${CMAKE_CXX_COMPILER_ID}, Mode: ${CMAKE_BUILD_TYPE}" )
-message( STATUS "Tests: ${UTILITY_BuildTests}, FS HACK: ${UTILITY_UseFilesystemHack}" )
+message( STATUS "Tests: ${SHEFF_BuildTests}, FS HACK: ${SHEFF_UseFilesystemHack}" )
 
 # Add cmake dir to module path
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
@@ -29,7 +29,7 @@ find_package(nlohmann_json 3.2.0 CONFIG REQUIRED HINTS
   "${PROJECT_SOURCE_DIR}/../third_party/json_install_dir" "${PROJECT_SOURCE_DIR}/../../third_party/json_install_dir" "${PROJECT_SOURCE_DIR}/modules/third_party/json_install_dir")
 
 
-if( UTILITY_USE_MPI )
+if( SHEFF_USE_MPI )
     find_package( MPI REQUIRED )
 endif()
 
@@ -63,7 +63,7 @@ target_compile_features(utility PUBLIC cxx_std_14)
 set_target_properties(utility PROPERTIES FOLDER "sheff")
 
 # Use filesystem if available, otherwise use our hack.
-if( UTILITY_UseFilesystemHack )
+if( SHEFF_UseFilesystemHack )
 else()
   target_compile_definitions(utility PUBLIC HAVE_FILESYSTEM )
   if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
@@ -81,7 +81,7 @@ endif()
 
 # Link dependencies
 target_link_libraries(utility PUBLIC nlohmann_json::nlohmann_json)
-if(UTILITY_USE_MPI AND MPI_FOUND)
+if(SHEFF_USE_MPI AND MPI_FOUND)
     target_compile_definitions(utility PUBLIC HAVE_MPI)
     target_include_directories(utility PUBLIC ${MPI_CXX_INCLUDE_PATH})
     target_link_libraries(utility PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
@@ -103,7 +103,7 @@ assign_source_groups_sheff()
 #################################
 
 # Build tests
-if(UTILITY_BuildTests)
+if(SHEFF_BuildTests)
     include(CTest)
     enable_testing()
     add_subdirectory(unit_tests)
