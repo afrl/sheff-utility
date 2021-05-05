@@ -1543,7 +1543,7 @@ inline void MPIUtils::exchange_arrays(const int n_destination_ranks,
     for (auto i = 0; i < n_destination_ranks; i++)
     {
         MPI_Isend(&send_data[send_rank_offsets[i]],
-                  send_counts[i] * sizeof(T),
+                  static_cast<int>(send_counts[i] * sizeof(T)),
                   MPI_BYTE,
                   destination_ranks[i],
                   0,
@@ -1556,7 +1556,7 @@ inline void MPIUtils::exchange_arrays(const int n_destination_ranks,
     for (auto i : utility::range(n_source_ranks))
     {
         MPI_Irecv(&receive_data[receive_rank_offsets[i]],
-                  receive_counts[i] * sizeof(T),
+                  static_cast<int>(receive_counts[i] * sizeof(T)),
                   MPI_BYTE,
                   source_ranks[i],
                   MPI_ANY_TAG, // We don't need to use the tag
