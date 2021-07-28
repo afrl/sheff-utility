@@ -67,12 +67,11 @@ if( SHEFF_UseFilesystemHack )
 else()
   target_compile_definitions(utility PUBLIC HAVE_FILESYSTEM )
   if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
-      target_link_libraries( utility PUBLIC libstdc++fs.a )
+      target_link_libraries(utility PUBLIC -static-libstdc++fs)
   elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel" )
       # Trying the same thing with Intel, linked against newer GCC libs, but no luck
-      target_link_libraries( utility PUBLIC libstdc++fs.a )
-  endif()
-  if (MSVC)
+      target_link_libraries(utility PUBLIC -static-libstdc++fs)
+  elseif (MSVC)
       # This is to silence the error that MS will remove <experimental/filesystem> and replace
       # it with <filesystem>
       target_compile_definitions(utility PUBLIC _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING)
