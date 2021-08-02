@@ -100,13 +100,13 @@ void remove_substring(std::string& s, const std::string& substr)
     }
 }
 
-void replace_substring(std::string& s,
+bool replace_substring(std::string& s,
                        const std::string& to_replace,
                        const std::string& replacement)
 {
     if (to_replace.empty())
     {
-        return;
+        return false;
     }
 
     std::size_t start_pos = 0;
@@ -115,5 +115,6 @@ void replace_substring(std::string& s,
         s.replace(start_pos, to_replace.length(), replacement);
         start_pos += replacement.length();
     }
+    return start_pos == 0;
 }
 }

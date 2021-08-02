@@ -28,8 +28,9 @@ unsigned int str_to_axis(const std::string& s);
 std::vector<std::string> tokenize(const std::string& s);
 /// Erases all occurences of substr from s
 void remove_substring(std::string& s, const std::string& substr);
-/// Replaces all occurences of substr from s
-void replace_substring(std::string& s,
+/// Replaces all occurences of substr from s.
+/// @returns Boolean indicating if a replacement occurred.
+bool replace_substring(std::string& s,
                        const std::string& to_replace,
                        const std::string& replacement);
 }
