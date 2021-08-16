@@ -1,12 +1,13 @@
 #pragma once
 
 #include "Exceptions.h"
-#include "MPIUtils.h"
 
+#include <assert.h>
 #include <chrono>
 #include <iostream>
 #include <stack>
 #include <string>
+#include <sstream>
 
 namespace utility
 {
@@ -45,11 +46,7 @@ class Profile
         return singleton;
     }
 
-    Profile()
-    {
-        counter_ = 0;
-        depth_   = 0;
-    }
+    Profile() = default;
 
     static std::string beautify_duration(std::chrono::milliseconds input_seconds)
     {
@@ -108,7 +105,7 @@ class Profile
   public:
     ~Profile()
     {
-        if (utility::MPIUtils::is_root() && !is_quiet_)
+        if (rank_ == 0 && !is_quiet_)
         {
             print();
         }
@@ -202,11 +199,18 @@ class Profile
         get().is_quiet_ = is_quiet;
     }
 
+    static void set_rank(const int rank)
+    {
+        get().rank_ = rank;
+    }
+
   private:
     std::deque<detail::ProfileStart> starts_;
     std::deque<detail::ProfileInterval> completed_intervals_;
-    int counter_;
-    int depth_;
-    bool is_quiet_;
+    int counter_ = 0;
+    int depth_ = 0;
+    bool is_quiet_ = false;
+    // Note: MPIUtils will probably be destructed before Profile, so the rank must be stored
+    int rank_ = 0;
 };
 }

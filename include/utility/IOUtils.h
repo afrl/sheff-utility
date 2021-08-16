@@ -25,6 +25,11 @@ static FILE* file_open(std::string filename, std::string mode)
     FILE* in_file;
 #if defined(_MSC_VER)
     errno_t err = fopen_s(&in_file, filename.c_str(), mode.c_str());
+    if (err != 0)
+    {
+        throw _UTIL_MSG_EXCEPT("File '" + filename +
+                               "' could not be opened, perhaps it is locked?");
+    }
 #else
     in_file = fopen(filename.c_str(), mode.c_str());
 #endif
@@ -39,13 +44,14 @@ static FILE* file_open(std::string filename, std::string mode)
 /// at a computational cost of course.  The benefit would be that it allows files to be written
 /// based on data structures with some datatypes and later read into new versions of the data
 /// structures (where the types of members have been changed) or a new data structure altogether.
-/// Furthermore, it does not currently check endian-ness, though that should be considered if systems
-/// with other endian-ness for filesystem I/O will be used (like Solaris based systems for example).
+/// Furthermore, it does not currently check endian-ness, though that should be considered if
+/// systems with other endian-ness for filesystem I/O will be used (like Solaris based systems for
+/// example).
 class IOUtils
 {
   public:
-	///@{
-	///@name Output methods
+    ///@{
+    ///@name Output methods
 
     /// Writes a fundamental type to a binary file a the current stream position
     template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
@@ -65,10 +71,10 @@ class IOUtils
     template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
     static void binary_write(std::ostream& out, T* arr, const std::streamsize size);
 
-	///@}
-    
-	///@{
-	///@name Input methods
+    ///@}
+
+    ///@{
+    ///@name Input methods
 
     /// Reads a fundamental type from a binary file, but the type must match the type in the file.
     template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
@@ -116,15 +122,15 @@ class IOUtils
                             const std::size_t num_values,
                             const int8_t size_of_data_type_in_file);
 
-	///@}
+    ///@}
 
-	///@{
-	///@name Conversions
+    ///@{
+    ///@name Conversions
 
     template<typename ConvertToType, typename ConvertFromType, std::size_t Size>
     static auto convert_array(const std::array<ConvertFromType, Size>& src);
 
-	///@}
+    ///@}
 };
 
 

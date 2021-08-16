@@ -2,6 +2,7 @@
 
 #include "Exceptions.h"
 #include "Range.h"
+#include "Profile.h"
 
 #include <nlohmann/json.hpp>
 
@@ -460,6 +461,7 @@ inline void MPIUtils::init(int* argc, char*** argv, const int group_key, const b
     // This is more useful as each program will have operations
     // for its group based on its rank.
     MPI_Group_rank(local_group, &state.local_rank);
+    Profile::set_rank(state.local_rank);
 
     // Free the group since we have the rank now
     MPI_Group_free(&local_group);
