@@ -64,10 +64,15 @@ class UniquePtrForwardIteratorWrapper
         underlying_iter_++;
         return iter;
     }
-
-    friend void swap(UniquePtrForwardIteratorWrapper&, UniquePtrForwardIteratorWrapper&);
-    friend bool operator==(const UniquePtrForwardIteratorWrapper&,
-                           const UniquePtrForwardIteratorWrapper&);
+    
+    template<typename T>
+    friend void swap(
+        UniquePtrForwardIteratorWrapper<T>&,
+        UniquePtrForwardIteratorWrapper<T>&);
+    template<typename T>
+    friend bool operator==(
+        const UniquePtrForwardIteratorWrapper<T>&,
+        const UniquePtrForwardIteratorWrapper<T>&);
 
     bool operator!=(const UniquePtrForwardIteratorWrapper& rhs)
     {

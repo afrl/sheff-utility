@@ -55,6 +55,11 @@ class DynamicArray
     T& back() const;
     /// Returns the size of the container
     const SizeType& size() const;
+    /// Returns a const pointer to the underlying data
+    const T* data() const
+    {
+        return objects_;
+    }
 
     /// Resizes the array to a certain number of objects.  The default constructor is called for
     /// each object.

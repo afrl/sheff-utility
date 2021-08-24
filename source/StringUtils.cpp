@@ -1,5 +1,3 @@
-#include "..\include\utility\StringUtils.h"
-
 #include "utility/StringUtils.h"
 
 #include <algorithm>
