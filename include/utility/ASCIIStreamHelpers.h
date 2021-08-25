@@ -16,8 +16,6 @@ std::string skip_to_line_that_contains(const std::string& substr,
                                        std::string curr_line = "");
 
 /// @brief Equivalent functionality to getline but correctly delimits both Windows and Linux line
-/// endings regardless of the system and throws on error.
-/// 
-/// @returns Bool indicating if EOF is reached.
-bool get_next_line(std::istream& in, std::string& str);
+/// endings regardless of the system.
+std::istream& get_next_line(std::istream& in, std::string& str);
 }

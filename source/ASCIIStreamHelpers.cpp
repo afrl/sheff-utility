@@ -36,24 +36,38 @@ std::string skip_to_line_that_contains(const std::string& substr,
     return line;
 }
 
-bool get_next_line(std::istream& in, std::string& str)
+std::istream& get_next_line(std::istream& in, std::string& str)
 {
-    getline(in, str, '\r');
+    // Taken from: https://stackoverflow.com/questions/6089231/getting-std-ifstream-to-handle-lf-cr-and-crlf
 
-    if (in.rdstate() == std::ios_base::badbit)
-    {
-        throw _UTIL_MSG_EXCEPT("An error occurred reading the next line: " + str);
-    }
+	str.clear();
 
-    // Note: "Notice that some eofbit cases will also set failbit."
-    // Source: https://www.cplusplus.com/reference/string/string/getline/
-    if (in.rdstate() == std::ios_base::eofbit || in.rdstate() == std::ios_base::failbit)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+	// The characters in the stream are read one-by-one using a std::streambuf.
+	// That is faster than reading them one-by-one using the std::istream.
+	// Code that uses streambuf this way must be guarded by a sentry object.
+	// The sentry object performs various tasks,
+	// such as thread synchronization and updating the stream state.
+
+	std::istream::sentry se(in, true);
+	auto sb = in.rdbuf();
+
+	for (;;) {
+		int c = sb->sbumpc();
+		switch (c) {
+		case '\n':
+			return in;
+		case '\r':
+			if (sb->sgetc() == '\n')
+				sb->sbumpc();
+			return in;
+		case EOF:
+			// Also handle the case when the last line has no line ending
+			if (str.empty())
+				in.setstate(std::ios::eofbit);
+			return in;
+		default:
+			str += (char)c;
+		}
+	}
 }
 }
