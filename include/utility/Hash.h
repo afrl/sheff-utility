@@ -7,6 +7,33 @@
 
 namespace utility
 {
+namespace detail
+{
+/// @brief Mixes the bits of a value to result in a better hash that can be better combined when
+/// calculating the hash of a set.
+///
+/// The choice of std::hash for standard types has become a critical issue for large problems where
+/// the faces or edges are hashed.  In MSVC, std::hash for integers results in a relatively
+/// uniformly distributed set of hashes in the range [min(std::size_t), max(std::size_t)] for a
+/// continuous integer range [0, N].  This is of course, desirable since the algorithm used to
+/// combine hashes (see the implementations of hash or hash_sorted), work much better for a random
+/// set of hashes.  Unfortunately, in GCC, std::hash of an integer is simply the integer itself,
+/// which leads to some collisions in the set of face hashes or edge hashes large meshes.  A hash
+/// mixer should be a 1-to-1 algorithm (no collisions) that more evenly distributes a set of inputs
+/// in the range of possible hashes.
+///
+/// References:
+///     http://zimbry.blogspot.com/2011/09/better-bit-mixing-improving-on.html
+///     https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
+inline std::size_t mix(std::size_t x)
+{
+    x = (x ^ (x >> 30)) * UINT64_C(0xbf58476d1ce4e5b9);
+    x = (x ^ (x >> 27)) * UINT64_C(0x94d049bb133111eb);
+    x = x ^ (x >> 31);
+    return x;
+}
+}
+
 /// Creates a combined hash for a homogeneous std::pair.
 template<typename T>
 std::size_t hash(const std::pair<T, T>& x)
@@ -18,8 +45,8 @@ std::size_t hash(const std::pair<T, T>& x)
 template<typename T>
 std::size_t hash(const T& x, const T& y)
 {
-    auto hash_x = std::hash<T>()(x);
-    return std::hash<T>()(y) + 0x9e3779b9 + (hash_x << 6) + (hash_x >> 2);
+    const auto hash_x = detail::mix((std::size_t)x);
+    return detail::mix((std::size_t)y) + 0x9e3779b9 + (hash_x << 6) + (hash_x >> 2);
 }
 
 /// Creates a combined hash for a list of objects in a container.
@@ -29,7 +56,7 @@ std::size_t hash(const ContainerType& vec)
     std::size_t seed = vec.size();
     for (auto& i : vec)
     {
-        seed ^= std::hash<std::size_t>()((std::size_t)i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        seed ^= detail::mix((std::size_t)i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
     }
     return seed;
 }
@@ -66,14 +93,14 @@ std::size_t hash_sorted(const ContainerType& vec)
     hashes.reserve(vec.size());
     for (auto& obj : vec)
     {
-        hashes.push_back(std::hash<std::size_t>()((std::size_t)obj));
+        hashes.push_back(detail::mix((std::size_t)obj));
     }
 
     std::vector<std::size_t> sorted_indices(hashes.size());
     std::iota(sorted_indices.begin(), sorted_indices.end(), 0);
-    std::stable_sort(sorted_indices.begin(), sorted_indices.end(), [&vec](size_t i1, size_t i2) {
-        return vec[i1] < vec[i2];
-    });
+    std::stable_sort(sorted_indices.begin(),
+                     sorted_indices.end(),
+                     [&vec](size_t i1, size_t i2) { return vec[i1] < vec[i2]; });
 
     std::size_t seed = vec.size();
     for (auto& i : sorted_indices)
