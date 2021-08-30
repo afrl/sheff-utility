@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Exceptions.h"
-#include "Range.h"
 #include "Profile.h"
+#include "Range.h"
 
 #include <nlohmann/json.hpp>
 
@@ -132,6 +132,14 @@ class MPIUtils
     static std::vector<T> gather_vectors(const std::vector<T>& data_from_this_proc,
                                          const bool use_local_comm = true);
 
+    /// This method will gather a vector from each process to the root process of the communicator
+    /// specified, keep each vector separate by rank.
+    /// Specialization for fundamental types (i.e. sizeof(T) would yield the number of bytes needed)
+    template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
+    static std::vector<std::vector<T>> gather_vectors_by_rank(
+      const std::vector<T>& data_from_this_proc,
+      const bool use_local_comm = true);
+
     /// This method will gather a string from each process and delivers it to the root process
     /// of the communicator specified.
     ///
@@ -243,6 +251,11 @@ class MPIUtils
     template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
     static std::vector<T> find_global_set(const std::vector<T>& values,
                                           const bool use_local_comm = true);
+
+    /// Both exchange_objects and exchange_arrays require each rank being aware of what ranks to
+    /// which to send data, which may not be known a priori.  Given the ranks to which this ranks
+    /// expects from which to receive data, this finds the ranks from which to send data.
+    static std::vector<int> find_exchange_destination_ranks(const std::vector<int>& source_ranks);
 
     /// Exchanges a single fundamental object with specific ranks.  This is useful for scattering
     /// data to adjacent ranks. \param n_destination_ranks - the number of ranks to send data to
@@ -739,6 +752,108 @@ inline std::vector<T> MPIUtils::gather_vectors(const std::vector<T>& data_from_t
 #endif
 }
 
+template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
+inline std::vector<std::vector<T>> MPIUtils::gather_vectors_by_rank(
+  const std::vector<T>& data_from_this_proc,
+  const bool use_local_comm)
+{
+#ifdef HAVE_MPI
+    VERIFY_INIT("gather_vectors");
+
+    // Select which comm to use for all MPI operations in this call
+    MPI_Comm comm = use_local_comm ? get_state().local_comm : MPI_COMM_WORLD;
+    // Get information about the MPI communicator
+    int comm_size;
+    MPI_Comm_size(comm, &comm_size);
+    int comm_rank;
+    MPI_Comm_rank(comm, &comm_rank);
+
+    const int size_of_type             = sizeof(T);
+    const int num_values_for_this_proc = static_cast<int>(data_from_this_proc.size());
+    const int num_bytes_for_this_proc  = num_values_for_this_proc * size_of_type;
+
+    if (comm_rank == 0)
+    {
+        // Figure out the size of the data on each rank that will be communciated
+        std::vector<int> num_values_for_each_proc(comm_size);
+        MPI_Gather(&num_values_for_this_proc,
+                   1,
+                   MPI_INT,
+                   &num_values_for_each_proc[0],
+                   1,
+                   MPI_INT,
+                   0,
+                   comm);
+
+        // Compute the number of bytes to expect from each rank and
+        // the offset in the buffer for each rank.
+        std::vector<int> recv_counts(comm_size);
+        std::vector<int> recv_offsets(comm_size + 1);
+        int offset = 0;
+        for (auto i = 0; i < comm_size; i++)
+        {
+            recv_counts[i]  = num_values_for_each_proc[i] * size_of_type;
+            recv_offsets[i] = offset;
+            offset += recv_counts[i];
+        }
+        recv_offsets.back() = offset;
+
+        // Allocate a buffer to put the data in
+        int num_total_values_needed = 0;
+        for (auto num_values : num_values_for_each_proc)
+        {
+            num_total_values_needed += num_values;
+        }
+        std::vector<T> recv_buffer(num_total_values_needed);
+
+        // Note: num_bytes_for_this_proc, recv_counts, and recv_offsets must all be
+        // in terms of the bytes (not number of values)
+        MPI_Gatherv(data_from_this_proc.data(),
+                    num_bytes_for_this_proc,
+                    MPI_CHAR,
+                    &recv_buffer[0],
+                    &recv_counts[0],
+                    &recv_offsets[0],
+                    MPI_CHAR,
+                    0,
+                    comm);
+
+        std::vector<std::vector<T>> recv_by_rank(comm_size);
+        for (auto i : utility::range(comm_size))
+        {
+            T* buff_start = &recv_buffer[recv_offsets[i] / size_of_type];
+            for (auto j : utility::range(num_values_for_each_proc[i]))
+            {
+                recv_by_rank[i].push_back(buff_start[j]);
+            }
+        }
+
+        return recv_by_rank;
+    }
+    else
+    {
+        // Figure out the size of the data on each rank that will be communciated
+        MPI_Gather(&num_values_for_this_proc, 1, MPI_INT, nullptr, 1, MPI_INT, 0, comm);
+
+        // Send the data to the root
+        MPI_Gatherv(&data_from_this_proc[0],
+                    num_bytes_for_this_proc,
+                    MPI_CHAR,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    MPI_CHAR,
+                    0,
+                    comm);
+
+        // Just return an empty container for all by the root rank
+        return std::vector<std::vector<T>>();
+    }
+#else
+    return data_from_this_proc;
+#endif
+}
+
 inline std::vector<std::string> MPIUtils::gather_strings_by_rank(
   const std::string& data_from_this_proc,
   const bool use_local_comm)
@@ -1126,15 +1241,20 @@ inline std::vector<T> MPIUtils::scatter_arrays(const std::vector<T>& data_to_sca
 
     assert(offsets.size() == comm_size + 1 || comm_rank > 0);
 
-    std::vector<int> offsets_bytes(offsets.size());
-    for (int i = 0; i < offsets_bytes.size(); i++)
+    std::vector<int> offsets_bytes;
+    std::vector<int> send_byte_counts;
+    if (comm_rank == 0)
     {
-        offsets_bytes[i] = static_cast<int>(offsets[i] * sizeof(T));
-    }
-    std::vector<int> send_byte_counts(offsets.size() - 1);
-    for (int i = 0; i < send_byte_counts.size(); i++)
-    {
-        send_byte_counts[i] = static_cast<int>((offsets[i + 1] - offsets[i]) * sizeof(T));
+        offsets_bytes.resize(offsets.size());
+        for (int i = 0; i < offsets_bytes.size(); i++)
+        {
+            offsets_bytes[i] = static_cast<int>(offsets[i] * sizeof(T));
+        }
+        send_byte_counts.resize(offsets.size() - 1);
+        for (int i = 0; i < send_byte_counts.size(); i++)
+        {
+            send_byte_counts[i] = static_cast<int>((offsets[i + 1] - offsets[i]) * sizeof(T));
+        }
     }
 
     // Scatter counts so each rank knows how to allocate the recv buffer
@@ -1419,6 +1539,50 @@ inline double MPIUtils::min_across_ranks(const double& value, const bool use_loc
     return all_reduce_helper<double>(value, use_local_comm, MPI_DOUBLE, MPI_MIN);
 #else
     return value;
+#endif
+}
+
+inline std::vector<int> MPIUtils::find_exchange_destination_ranks(
+  const std::vector<int>& source_ranks)
+{
+#ifdef HAVE_MPI
+    VERIFY_INIT("find_exchange_destination_ranks");
+
+    auto gathered_dest_ranks = gather_vectors_by_rank(source_ranks);
+
+    if (is_root())
+    {
+        std::vector<std::vector<int>> source_ranks(get_num_local_ranks());
+        for (auto rank : utility::range(get_num_local_ranks()))
+        {
+            for (auto i : gathered_dest_ranks[rank])
+            {
+                source_ranks[i].push_back(rank);
+            }
+        }
+
+        std::vector<int> source_ranks_unravel;
+        std::vector<std::size_t> offsets = { 0 };
+        for (auto rank : utility::indices(source_ranks))
+        {
+            auto& v = source_ranks[rank];
+            for (auto& i : v)
+            {
+                source_ranks_unravel.push_back(i);
+            }
+            offsets.push_back(source_ranks_unravel.size());
+        }
+        return scatter_arrays(source_ranks_unravel, offsets);
+    }
+    else
+    {
+        std::vector<int> source_ranks_unravel;
+        std::vector<std::size_t> offsets;
+        return scatter_arrays(source_ranks_unravel, offsets);
+    }
+
+#else
+    return std::vector<int>();
 #endif
 }
 

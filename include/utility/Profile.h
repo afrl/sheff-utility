@@ -106,7 +106,7 @@ class Profile
   public:
     ~Profile()
     {
-        if (rank_ == 0 && !is_quiet_)
+        if (rank_ == 0 && !is_quiet_ && completed_intervals_.size() > 0)
         {
             print();
         }
