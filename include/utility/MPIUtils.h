@@ -307,31 +307,31 @@ class MPIUtils
     static void receive_from_group(std::vector<T>& data, int target_group_key);
 
     /// An accessor method to get global rank
-    static const int get_global_rank()
+    static int get_global_rank()
     {
         return get_state().global_rank;
     }
 
     /// Shortcut to see if on root rank
-    static const bool is_root()
+    static bool is_root()
     {
         return get_state().global_rank == 0;
     }
 
     /// An accessor method to get local rank
-    static const int get_local_rank()
+    static int get_local_rank()
     {
         return get_state().local_rank;
     }
 
     /// Returns the local communicator for the processors that call init with the same group_key
-    static const MPI_Comm get_local_comm()
+    static MPI_Comm get_local_comm()
     {
         return get_state().local_comm;
     }
 
     /// Returns the number of ranks in the local communicator
-    static const int get_num_local_ranks();
+    static int get_num_local_ranks();
 
     /// Each rank ouputs their process ID to the screen.
     static void print_process_ids();
@@ -1802,7 +1802,7 @@ inline void MPIUtils::receive_from_group(std::vector<T>& data, int target_group_
 #endif
 }
 
-inline const int MPIUtils::get_num_local_ranks()
+inline int MPIUtils::get_num_local_ranks()
 {
 #ifdef HAVE_MPI
     VERIFY_INIT("get_num_local_ranks");

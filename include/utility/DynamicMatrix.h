@@ -22,9 +22,9 @@ namespace utility
             : begin_(other.begin_), end_(other.end_)
         {}
 
-		T * const begin() const { return begin_; }
-		T * const end() const { return end_; }
-        const ColSizeType size() const { return static_cast<ColSizeType>(end_ - begin_); }
+		T * begin() const { return begin_; }
+		T * end() const { return end_; }
+        ColSizeType size() const { return static_cast<ColSizeType>(end_ - begin_); }
         T & operator[](const ColSizeType i) const { return *(begin_ + i); }
 
 	private:
@@ -53,10 +53,10 @@ namespace utility
 
 		/// Returns the beginning of the connectivity with type of
 		/// const pointer to const pointers of objects.  Only the objects are multable.
-		T * const begin() const;
+		T * begin() const;
 		/// Returns the end of the connectivity with type of const pointer to const pointers of const objects.
 		/// Note: this points just beyond the array.  DO NOT use any methods.  Only use to test iterator.
-		T * const end() const;
+		T * end() const;
 		/// Returns the number of rows of the container
 		const RowSizeType& n_rows() const;
 		/// Returns the number of columns of the container
@@ -158,13 +158,13 @@ namespace utility
     }
 
 	template<typename T, typename RowSizeType, typename ColSizeType>
-	inline T * const DynamicMatrix<T, RowSizeType, ColSizeType>::begin() const
+	inline T * DynamicMatrix<T, RowSizeType, ColSizeType>::begin() const
 	{
 		return &objects_[0];
 	}
 
 	template<typename T, typename RowSizeType, typename ColSizeType>
-	inline T * const DynamicMatrix<T, RowSizeType, ColSizeType>::end() const
+	inline T * DynamicMatrix<T, RowSizeType, ColSizeType>::end() const
 	{
 		return &objects_[row_size_ * col_size_];
 	}

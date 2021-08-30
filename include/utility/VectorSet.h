@@ -20,7 +20,7 @@ namespace utility
         ~VectorSet() {}
 
         /// Returns the size of the container (the number of items stored)
-        inline const std::size_t size() const { return v.size(); }
+        inline std::size_t size() const { return v.size(); }
 
         void reserve(const std::size_t n) { v.reserve(n); }
 

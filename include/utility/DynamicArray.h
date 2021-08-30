@@ -44,11 +44,11 @@ class DynamicArray
 
     /// Returns the beginning of the connectivity with type of
     /// const pointer to const pointers of objects.  Only the objects are multable.
-    T* const begin() const;
+    T* begin() const;
     /// Returns the end of the connectivity with type of const pointer to const pointers of const
     /// objects. Note: this points just beyond the array.  DO NOT use any methods.  Only use to test
     /// iterator.
-    T* const end() const;
+    T* end() const;
     /// Returns the first node in the connectivity list
     T& front() const;
     /// Returns the last node in the connectivity list
@@ -246,13 +246,13 @@ inline DynamicArray<T, SizeType>::~DynamicArray()
 }
 
 template<typename T, typename SizeType>
-inline T* const DynamicArray<T, SizeType>::begin() const
+inline T* DynamicArray<T, SizeType>::begin() const
 {
     return &objects_[0];
 }
 
 template<typename T, typename SizeType>
-inline T* const DynamicArray<T, SizeType>::end() const
+inline T* DynamicArray<T, SizeType>::end() const
 {
     return &objects_[size_];
 }
