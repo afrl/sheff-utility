@@ -27,8 +27,9 @@ static FILE* file_open(std::string filename, std::string mode)
     errno_t err = fopen_s(&in_file, filename.c_str(), mode.c_str());
     if (err != 0)
     {
-        throw _UTIL_MSG_EXCEPT("File '" + filename +
-                               "' could not be opened, perhaps it is locked?");
+        throw _UTIL_MSG_EXCEPT(
+          "File '" + filename +
+          "' could not be opened, perhaps it is locked?  Error code: " + std::to_string(err));
     }
 #else
     in_file = fopen(filename.c_str(), mode.c_str());
