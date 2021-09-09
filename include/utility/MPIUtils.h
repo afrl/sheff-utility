@@ -850,7 +850,7 @@ inline std::vector<std::vector<T>> MPIUtils::gather_vectors_by_rank(
         return std::vector<std::vector<T>>();
     }
 #else
-    return data_from_this_proc;
+    return { data_from_this_proc };
 #endif
 }
 
