@@ -811,9 +811,9 @@ inline std::vector<std::vector<T>> MPIUtils::gather_vectors_by_rank(
         MPI_Gatherv(data_from_this_proc.data(),
                     num_bytes_for_this_proc,
                     MPI_CHAR,
-                    &recv_buffer[0],
-                    &recv_counts[0],
-                    &recv_offsets[0],
+                    recv_buffer.data(),
+                    recv_counts.data(),
+                    recv_offsets.data(),
                     MPI_CHAR,
                     0,
                     comm);
@@ -821,10 +821,13 @@ inline std::vector<std::vector<T>> MPIUtils::gather_vectors_by_rank(
         std::vector<std::vector<T>> recv_by_rank(comm_size);
         for (auto i : utility::range(comm_size))
         {
-            T* buff_start = &recv_buffer[recv_offsets[i] / size_of_type];
-            for (auto j : utility::range(num_values_for_each_proc[i]))
+            if (num_values_for_each_proc[i] > 0)
             {
-                recv_by_rank[i].push_back(buff_start[j]);
+                T* buff_start = &recv_buffer[recv_offsets[i] / size_of_type];
+                for (auto j : utility::range(num_values_for_each_proc[i]))
+                {
+                    recv_by_rank[i].push_back(buff_start[j]);
+                }
             }
         }
 
