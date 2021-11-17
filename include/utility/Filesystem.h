@@ -9,17 +9,12 @@
 
 #ifdef HAVE_FILESYSTEM
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
-#if _HAS_CXX17
-#include <filesystem>
-namespace fs = std::filesystem;
+#if __has_include(<filesystem>)
+    #include <experimental/filesystem>
+    namespace fs = std::experimental::filesystem;
 #else
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#endif
-#else
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
+    #include <filesystem>
+    namespace fs = std::filesystem;
 #endif
 
 #else

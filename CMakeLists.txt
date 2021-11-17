@@ -70,7 +70,7 @@ else()
       #target_link_libraries(utility PUBLIC -static-libstdc++fs)
   elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel" )
       # Trying the same thing with Intel, linked against newer GCC libs, but no luck
-      target_link_libraries(utility PUBLIC -static-libstdc++fs)
+      target_link_libraries(utility PUBLIC stdc++fs)
   elseif (MSVC)
       # This is to silence the error that MS will remove <experimental/filesystem> and replace
       # it with <filesystem>
