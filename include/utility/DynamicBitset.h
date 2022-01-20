@@ -24,7 +24,9 @@ class DynamicBitset
 {
   public:
     using BlockSizeType = uint8_t;
-    using SizeType      = unsigned long;
+    using SizeType      = uint64_t;
+
+    static_assert(BLOCK_SIZE <= 64, "DynamicBitset requires a block size of 64 or less");
 
     DynamicBitset()                         = default;
     DynamicBitset(const DynamicBitset&)     = default;
@@ -45,6 +47,8 @@ class DynamicBitset
     /// Resizes to the next largest multiple of BLOCK_SIZE
     inline void resize(const SizeType n_bits)
     {
+        _UTIL_ASSERT(n_bits < (uint64_t)256 * BLOCK_SIZE,
+                     "Requested bitset size is greater than the maximum allowable size.");
         BlockSizeType n_blocks = n_bits / BLOCK_SIZE + (n_bits % BLOCK_SIZE != 0);
         bitset_blocks_.resize(n_blocks);
     }
@@ -77,6 +81,17 @@ class DynamicBitset
     inline SizeType size() const
     {
         return bitset_blocks_.size() * BLOCK_SIZE;
+    }
+
+    /// Returns the number of true bits in the set
+    inline SizeType count() const
+    {
+        SizeType c = 0;
+        for (auto& block : bitset_blocks_)
+        {
+            c += block.count();
+        }
+        return c;
     }
 
     inline bool empty() const
@@ -120,12 +135,20 @@ class DynamicBitset
           size() == other.size() && block_size() == other.block_size(),
           "The bitsets must be the same size and have the same block size for the < operator");
 
-        bool result = true;
-        for (auto i : range(bitset_blocks_.size()))
+        for (auto i = bitset_blocks_.size() - 1; i >= 0; i--)
         {
-            result &= bitset_blocks_[i].to_ulong() < other.bitset_blocks_[i].to_ulong();
+            if (bitset_blocks_[i].to_ullong() < other.bitset_blocks_[i].to_ullong())
+            {
+                return true;
+            }
+            else if (bitset_blocks_[i].to_ullong() > other.bitset_blocks_[i].to_ullong())
+            {
+                return false;
+            }
+            // Loop continues if the blocks were equal
         }
-        return result;
+        // All blocks are equal
+        return false;
     }
 
   private:

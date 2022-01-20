@@ -58,8 +58,8 @@ target_sources(utility PUBLIC ${UTILITY_HEADER_LIST})
 target_sources(utility PRIVATE ${UTILITY_SOURCE_LIST})
 # Add an alias so that a library can be used inside the build tree, eg when testing
 add_library(Utility::Utility ALIAS utility)
-# Add C++ 14 flag
-target_compile_features(utility PUBLIC cxx_std_14)
+# Add C++ 17 flag
+target_compile_features(utility PUBLIC cxx_std_17)
 set_target_properties(utility PROPERTIES FOLDER "sheff")
 
 # Use filesystem if available, otherwise use our hack.

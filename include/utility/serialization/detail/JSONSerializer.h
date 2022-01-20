@@ -44,7 +44,7 @@ class JSONSerializer : public Serializer<JSONSerializer>
 
     void reset()
     {
-        j_ = json::object();
+        j_.clear();
         object_stack_.clear();
         object_stack_.push_back(std::ref(j_));
         dumped_to_out_ = false;
@@ -59,7 +59,7 @@ class JSONSerializer : public Serializer<JSONSerializer>
     /// Grant access to parent class so it can call process(...)
     friend class Serializer<JSONSerializer>;
 
-    /// Counts the number of bytes for fundamental types.
+    /// Serializes fundamental types.
     /// @param name - name of value in the JSON, if left empty a default sequence of names value1,
     /// value2, ... will be used
     template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
@@ -68,16 +68,35 @@ class JSONSerializer : public Serializer<JSONSerializer>
         object_stack_.back().get()[name] = v;
     }
 
-    /// Counts the number of bytes for a slice.
-    /// @param name - name of value in the JSON, if left empty a default sequence of names value1,
-    /// value2, ... will be used
-    template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
-    inline void process(const Slice<T>& slice, const std::string& name = "")
+    /// Serializes a slice for fundamental types (int, double, etc.)
+    /// @param name - name of value in the JSON
+    template<typename T,
+             typename SizeType,
+             typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
+    inline void process(const Slice<T, SizeType>& slice, const std::string& name = "")
     {
         json arr = json::array();
         for (auto& v : slice)
         {
             arr.push_back(v);
+        }
+        object_stack_.back().get()[name] = arr;
+    }
+
+    /// Serializes a slice for non-fundamental types
+    /// @param name - name of value in the JSON
+    template<typename T,
+             typename SizeType,
+             typename std::enable_if<!std::is_fundamental<T>::value, T>::type* = nullptr>
+    inline void process(const Slice<T, SizeType>& slice, const std::string& name = "")
+    {
+        json arr = json::array();
+        for (auto& v : slice)
+        {
+            arr.push_back(json::object());
+            object_stack_.push_back(std::ref(arr.back()));
+            Serializer<JSONSerializer>::forward_to_serialize(v);
+            object_stack_.pop_back();
         }
         object_stack_.back().get()[name] = arr;
     }
@@ -95,6 +114,57 @@ class JSONSerializer : public Serializer<JSONSerializer>
         object_stack_.push_back(std::ref(object_stack_.back().get()[name]));
         Serializer<JSONSerializer>::forward_to_serialize(v);
         object_stack_.pop_back();
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // A bunch of specializations to fix the interpretation of strings
+
+    /// Fixes slices of strings to be interpreted as an array of strings
+    inline void process(const Slice<std::string>& slice, const std::string& name = "")
+    {
+        json arr = json::array();
+        for (auto& v : slice)
+        {
+            arr.push_back(v);
+        }
+        object_stack_.back().get()[name] = arr;
+    }
+
+    /// Fixes slices of strings to be interpreted as an array of strings
+    inline void process(const Slice<const std::string>& slice, const std::string& name = "")
+    {
+        json arr = json::array();
+        for (auto& v : slice)
+        {
+            arr.push_back(v);
+        }
+        object_stack_.back().get()[name] = arr;
+    }
+
+    /// Since the C++ standard failed to distinguish char from int8_t, the corresponding JSON object
+    /// for a slice of char's would be a bunch of numbers instead of a string.  This specialization
+    /// fixes the issue.
+    template<>
+    inline void process(const Slice<char>& slice, const std::string& name)
+    {
+        object_stack_.back().get()[name] = std::string(slice.begin(), slice.end());
+    }
+
+    /// Since the C++ standard failed to distinguish char from int8_t, the corresponding JSON object
+    /// for a slice of char's would be a bunch of numbers instead of a string.  This specialization
+    /// fixes the issue.
+    template<>
+    inline void process(const Slice<const char>& slice, const std::string& name)
+    {
+        object_stack_.back().get()[name] = std::string(slice.begin(), slice.end());
+    }
+
+    /// Fixes strings to be interpreted as the corresponding fundamental type in JSON
+    template<>
+    inline void process(const std::string& str, const std::string& name)
+    {
+        object_stack_.back().get()[name] = str;
     }
 };
 

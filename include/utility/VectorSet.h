@@ -11,6 +11,8 @@ namespace utility
     /// an item already exists.  This class is generally used for computing sparsity
     /// patters, so the alternate methodology may provide better performance for that
     /// particular use case.
+    /// 
+    /// TODO implement binary searches and maintain sortedness on inserts
     template <class T>
     class VectorSet
     {
@@ -27,6 +29,8 @@ namespace utility
         /// Tries to inserts an item into the container and returns a bool
         /// indicating if an item was actually inserted.
         bool insert(const T& val);
+
+        bool contains(const T& val) const;
 
         /// Returns a reference to underlying vector.
         const std::vector<T>& get() const;
@@ -55,6 +59,19 @@ namespace utility
         }
         v.push_back(val);
         return true;
+    }
+
+    template<class T>
+    inline bool VectorSet<T>::contains(const T& val) const
+    {
+        for (const T& i : v)
+        {
+            if (val == i)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     template <class T>
