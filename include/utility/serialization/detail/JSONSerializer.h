@@ -145,7 +145,6 @@ class JSONSerializer : public Serializer<JSONSerializer>
     /// Since the C++ standard failed to distinguish char from int8_t, the corresponding JSON object
     /// for a slice of char's would be a bunch of numbers instead of a string.  This specialization
     /// fixes the issue.
-    template<>
     inline void process(const Slice<char>& slice, const std::string& name)
     {
         object_stack_.back().get()[name] = std::string(slice.begin(), slice.end());
@@ -154,14 +153,12 @@ class JSONSerializer : public Serializer<JSONSerializer>
     /// Since the C++ standard failed to distinguish char from int8_t, the corresponding JSON object
     /// for a slice of char's would be a bunch of numbers instead of a string.  This specialization
     /// fixes the issue.
-    template<>
     inline void process(const Slice<const char>& slice, const std::string& name)
     {
         object_stack_.back().get()[name] = std::string(slice.begin(), slice.end());
     }
 
     /// Fixes strings to be interpreted as the corresponding fundamental type in JSON
-    template<>
     inline void process(const std::string& str, const std::string& name)
     {
         object_stack_.back().get()[name] = str;
