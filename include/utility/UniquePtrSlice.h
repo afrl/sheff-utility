@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UniquePtrForwardIteratorWrapper.h"
+#include "serialization/NamedValue.h"
 
 #include <array>
 #include <memory>

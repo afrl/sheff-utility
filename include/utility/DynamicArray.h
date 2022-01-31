@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CrossplatformHelpers.h"
+#include "Range.h"
 
 #include <assert.h>
 #include <limits>

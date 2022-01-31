@@ -4,6 +4,7 @@
 #include <functional> // std::hash
 #include <numeric>    // std::iota
 #include <utility>    // std::pair
+#include <vector>
 
 namespace utility
 {
@@ -34,19 +35,19 @@ inline std::size_t mix(std::size_t x)
 }
 }
 
-/// Creates a combined hash for a homogeneous std::pair.
-template<typename T>
-std::size_t hash(const std::pair<T, T>& x)
-{
-    return hash(x.first, x.second);
-}
-
 /// Creates a combined hash for two objects of the same type.
 template<typename T>
 std::size_t hash(const T& x, const T& y)
 {
     const auto hash_x = detail::mix((std::size_t)x);
     return detail::mix((std::size_t)y) + 0x9e3779b9 + (hash_x << 6) + (hash_x >> 2);
+}
+
+/// Creates a combined hash for a homogeneous std::pair.
+template<typename T>
+std::size_t hash(const std::pair<T, T>& x)
+{
+    return hash(x.first, x.second);
 }
 
 /// Creates a combined hash for a list of objects in a container.

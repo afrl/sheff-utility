@@ -10,11 +10,11 @@
 #ifdef HAVE_FILESYSTEM
 
 #if __has_include(<filesystem>)
-    #include <experimental/filesystem>
-    namespace fs = std::experimental::filesystem;
-#else
     #include <filesystem>
     namespace fs = std::filesystem;
+#else
+    #include <experimental/filesystem>
+    namespace fs = std::experimental::filesystem;
 #endif
 
 #else

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Range.h"
+
 #include <array>
 #include <type_traits>
 #include <vector>

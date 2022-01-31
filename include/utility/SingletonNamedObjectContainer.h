@@ -3,6 +3,7 @@
 #include "utility/Exceptions.h"
 #include "utility/UniquePtrSlice.h"
 #include "utility/serialization/NamedValue.h"
+#include "utility/Slice.h"
 
 #include <assert.h>
 #include <map>
