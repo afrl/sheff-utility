@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Range.h"
+#include "Exceptions.h"
 
 #include <array>
 #include <type_traits>
@@ -41,6 +42,30 @@ struct Slice
         return n_objects;
     }
 
+    T& front()
+    {
+        _UTIL_ASSERT_C(ptr != nullptr, "The underlying data for the slice is null.");
+        return ptr[0];
+    }
+
+    const T& front() const
+    {
+        _UTIL_ASSERT_C(ptr != nullptr, "The underlying data for the slice is null.");
+        return ptr[0];
+    }
+
+    T& back()
+    {
+        _UTIL_ASSERT_C(ptr != nullptr, "The underlying data for the slice is null.");
+        return ptr[n_objects - 1];
+    }
+
+    const T& back() const
+    {
+        _UTIL_ASSERT_C(ptr != nullptr, "The underlying data for the slice is null.");
+        return ptr[n_objects - 1];
+    }
+
     T* data()
     {
         return ptr;
@@ -64,6 +89,7 @@ struct Slice
     /// Accessor that is redudant compared to operator[], but is needed for Python.
     const T& get(SizeType i) const
     {
+        _UTIL_ASSERT_C(ptr != nullptr, "The underlying data for the slice is null.");
         return ptr[i];
     }
 
