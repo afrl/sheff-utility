@@ -31,7 +31,7 @@ find_package(nlohmann_json 3.2.0 CONFIG REQUIRED HINTS
 
 
 if( SHEFF_USE_MPI )
-    find_package( MPI REQUIRED )
+    find_package( MPI REQUIRED COMPONENTS CXX )
 endif()
 
 #############################

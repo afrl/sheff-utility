@@ -5,9 +5,9 @@
 #include <assert.h>
 #include <chrono>
 #include <iostream>
+#include <sstream>
 #include <stack>
 #include <string>
-#include <sstream>
 #include <vector>
 
 namespace utility
@@ -123,7 +123,7 @@ class Profile
                                   depth });
     }
 
-    static void end(const char* caller)
+    static std::string end(const char* caller)
     {
         auto popped_data = get().starts_.back();
         get().starts_.pop_back();
@@ -138,6 +138,12 @@ class Profile
                                                 popped_data.start_time,
                                                 end_time,
                                                 popped_data.depth });
+
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+          get().completed_intervals_.front().end_time -
+          get().completed_intervals_.front().start_time);
+
+        return beautify_duration(duration);
     }
 
     void print()
@@ -208,8 +214,8 @@ class Profile
   private:
     std::deque<detail::ProfileStart> starts_;
     std::deque<detail::ProfileInterval> completed_intervals_;
-    int counter_ = 0;
-    int depth_ = 0;
+    int counter_   = 0;
+    int depth_     = 0;
     bool is_quiet_ = false;
     // Note: MPIUtils will probably be destructed before Profile, so the rank must be stored
     int rank_ = 0;

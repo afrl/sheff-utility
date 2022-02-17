@@ -3,6 +3,7 @@
 #include "Exceptions.h"
 #include "Profile.h"
 #include "Range.h"
+#include "Slice.h"
 
 #include <nlohmann/json.hpp>
 
@@ -203,9 +204,23 @@ class MPIUtils
     template<typename T,
              typename OffsetType,
              typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
-    static std::vector<T> scatter_arrays(const std::vector<T>& data_to_scatter,
-                                         const std::vector<OffsetType>& offsets,
-                                         const bool use_local_comm = true);
+    static std::vector<typename std::remove_const<T>::type> scatter_arrays(
+      const std::vector<T>& data_to_scatter,
+      const std::vector<OffsetType>& offsets,
+      const bool use_local_comm = true);
+
+    /// Given a 1D array on the root rank, scatters the relevant portions of the array to the
+    /// other ranks based on the offets.  This does not require the portion of the 1D array
+    /// the corresponds to a rank to the same size as the other ranks.
+    /// Returns the vector of values for the respective rank on each rank.
+    template<typename T,
+             typename OffsetType,
+             typename SizeType,
+             typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
+    static std::vector<typename std::remove_const<T>::type> scatter_arrays(
+      const utility::Slice<T, SizeType>& data_to_scatter,
+      const utility::Slice<OffsetType, SizeType>& offsets,
+      const bool use_local_comm = true);
 
     /// Computes the sum of a scalar value for all ranks lower than this rank and returns the
     /// respective value.
@@ -1227,9 +1242,24 @@ inline T MPIUtils::scatter(const std::vector<T>& data_to_scatter, const bool use
 template<typename T,
          typename OffsetType,
          typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
-inline std::vector<T> MPIUtils::scatter_arrays(const std::vector<T>& data_to_scatter,
-                                               const std::vector<OffsetType>& offsets,
-                                               const bool use_local_comm)
+inline std::vector<typename std::remove_const<T>::type> MPIUtils::scatter_arrays(
+  const std::vector<T>& data_to_scatter,
+  const std::vector<OffsetType>& offsets,
+  const bool use_local_comm)
+{
+    VERIFY_INIT("scatter_arrays");
+
+    return scatter_arrays(utility::slice(data_to_scatter), utility::slice(offsets), use_local_comm);
+}
+
+template<typename T,
+         typename OffsetType,
+         typename SizeType,
+         typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
+inline std::vector<typename std::remove_const<T>::type> MPIUtils::scatter_arrays(
+  const utility::Slice<T, SizeType>& data_to_scatter,
+  const utility::Slice<OffsetType, SizeType>& offsets,
+  const bool use_local_comm)
 {
 #ifdef HAVE_MPI
     VERIFY_INIT("scatter_arrays");
@@ -1263,7 +1293,7 @@ inline std::vector<T> MPIUtils::scatter_arrays(const std::vector<T>& data_to_sca
     // Scatter counts so each rank knows how to allocate the recv buffer
     auto recv_byte_count = MPIUtils::scatter<int>(send_byte_counts);
 
-    std::vector<T> recv_buff(recv_byte_count / sizeof(T));
+    std::vector<std::remove_const<T>::type> recv_buff(recv_byte_count / sizeof(T));
     MPI_Scatterv(
       data_to_scatter.data(), // sendbuf - address of send buffer (choice, significant only at root)
       send_byte_counts.data(), // sendcounts - integer array (of length group size) specifying the
