@@ -38,6 +38,60 @@ struct ProfileInterval
 #define _F_BEGIN2(descr) utility::Profile::start(__func__, descr);
 #define _F_END()         utility::Profile::end(__func__);
 
+static std::string beautify_duration(std::chrono::milliseconds input_seconds)
+{
+    using namespace std::chrono;
+    auto h = duration_cast<hours>(input_seconds);
+    input_seconds -= h;
+    auto m = duration_cast<minutes>(input_seconds);
+    input_seconds -= m;
+    auto s = duration_cast<seconds>(input_seconds);
+    input_seconds -= s;
+    auto ms = duration_cast<milliseconds>(input_seconds);
+
+    auto hc  = h.count();
+    auto mc  = m.count();
+    auto sc  = s.count();
+    auto msc = ms.count();
+
+    std::stringstream ss;
+    ss.fill('0');
+    if (hc)
+    {
+        ss << hc << "h";
+    }
+    if (hc || mc)
+    {
+        if (hc)
+        {
+            ss << " ";
+        }
+        ss << mc << "m";
+    }
+    if (hc || mc || sc)
+    {
+        if (hc || mc)
+        {
+            ss << " ";
+        }
+        ss << sc << 's';
+    }
+    if (hc || mc || sc || msc)
+    {
+        if (hc || mc || sc)
+        {
+            ss << " ";
+        }
+        ss << msc << "ms";
+    }
+    if (!hc && !mc && !sc && !msc)
+    {
+        ss << "-";
+    }
+
+    return ss.str();
+}
+
 class Profile
 {
   private:
@@ -48,60 +102,6 @@ class Profile
     }
 
     Profile() = default;
-
-    static std::string beautify_duration(std::chrono::milliseconds input_seconds)
-    {
-        using namespace std::chrono;
-        auto h = duration_cast<hours>(input_seconds);
-        input_seconds -= h;
-        auto m = duration_cast<minutes>(input_seconds);
-        input_seconds -= m;
-        auto s = duration_cast<seconds>(input_seconds);
-        input_seconds -= s;
-        auto ms = duration_cast<milliseconds>(input_seconds);
-
-        auto hc  = h.count();
-        auto mc  = m.count();
-        auto sc  = s.count();
-        auto msc = ms.count();
-
-        std::stringstream ss;
-        ss.fill('0');
-        if (hc)
-        {
-            ss << hc << "h";
-        }
-        if (hc || mc)
-        {
-            if (hc)
-            {
-                ss << " ";
-            }
-            ss << mc << "m";
-        }
-        if (hc || mc || sc)
-        {
-            if (hc || mc)
-            {
-                ss << " ";
-            }
-            ss << sc << 's';
-        }
-        if (hc || mc || sc || msc)
-        {
-            if (hc || mc || sc)
-            {
-                ss << " ";
-            }
-            ss << msc << "ms";
-        }
-        if (!hc && !mc && !sc && !msc)
-        {
-            ss << "-";
-        }
-
-        return ss.str();
-    }
 
   public:
     ~Profile()
@@ -123,7 +123,7 @@ class Profile
                                   depth });
     }
 
-    static std::string end(const char* caller)
+    static std::chrono::milliseconds end(const char* caller)
     {
         auto popped_data = get().starts_.back();
         get().starts_.pop_back();
@@ -143,7 +143,7 @@ class Profile
           get().completed_intervals_.front().end_time -
           get().completed_intervals_.front().start_time);
 
-        return beautify_duration(duration);
+        return duration;
     }
 
     void print()
