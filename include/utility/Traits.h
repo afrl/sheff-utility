@@ -39,12 +39,13 @@
 ///   3rd edition)
 #define REUSE_CONST_ACCESSOR(method_name, ...)                                         \
     using const_return_type = decltype(std::as_const(*this).method_name(__VA_ARGS__)); \
-    using return_type =                                                                \
+    using return_type = typename                                                       \
       std::conditional<std::is_reference<const_return_type>::value,                    \
-                       std::add_lvalue_reference<std::remove_const<                    \
-                         std::remove_reference<const_return_type>::type>::type>::type, \
-                       std::remove_const<const_return_type>::type>::type;              \
-    return const_cast<return_type>(std::as_const(*this).method_name(__VA_ARGS__));
+                       typename std::add_lvalue_reference<typename std::remove_const<           \
+                         typename std::remove_reference<const_return_type>::type>::type>::type, \
+                       typename std::remove_const<const_return_type>::type                      \
+                       >::type;             \
+    return const_cast<typename return_type>(std::as_const(*this).method_name(__VA_ARGS__));
 
 /// Used with REUSE_CONST_ACCESSOR for templated methods 
 #define COMMA ,

@@ -1293,7 +1293,7 @@ inline std::vector<typename std::remove_const<T>::type> MPIUtils::scatter_arrays
     // Scatter counts so each rank knows how to allocate the recv buffer
     auto recv_byte_count = MPIUtils::scatter<int>(send_byte_counts);
 
-    std::vector<std::remove_const<T>::type> recv_buff(recv_byte_count / sizeof(T));
+    std::vector<typename std::remove_const<T>::type> recv_buff(recv_byte_count / sizeof(T));
     MPI_Scatterv(
       data_to_scatter.data(), // sendbuf - address of send buffer (choice, significant only at root)
       send_byte_counts.data(), // sendcounts - integer array (of length group size) specifying the
