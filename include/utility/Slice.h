@@ -159,6 +159,6 @@ Slice<typename std::underlying_type<T>::type> slice(std::vector<T>& vec)
 template<typename T, int DIM>
 Slice<T> slice(const std::array<T, DIM>& arr)
 {
-    return { arr.data(), arr.size() };
+    return Slice<T>(arr.data(), arr.size());
 }
 }
