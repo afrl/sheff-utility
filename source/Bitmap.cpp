@@ -34,7 +34,7 @@ struct BitmapHeader
     template<typename SerializerType>
     void serialize(SerializerType& s) const
     {
-        s(named_value("bitmap_signature", slice(bitmap_signature)));
+        s(named_value("bitmap_signature", Slice<const char>(bitmap_signature.data(), bitmap_signature.size())));
         s(named_value("file_size_bytes", file_size_bytes));
         s(named_value("reserved_bytes", reserved_bytes));
         s(named_value("pixel_data_offset", pixel_data_offset));
