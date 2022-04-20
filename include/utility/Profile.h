@@ -1,10 +1,13 @@
 #pragma once
 
 #include "Exceptions.h"
+#include "Hash.h"
 
 #include <assert.h>
 #include <chrono>
 #include <iostream>
+#include <map>
+#include <set>
 #include <sstream>
 #include <stack>
 #include <string>
@@ -12,212 +15,107 @@
 
 namespace utility
 {
+
 namespace detail
 {
 struct ProfileStart
 {
-    const int id;
-    const std::string caller;
-    const std::string description;
-    const std::chrono::high_resolution_clock::time_point start_time;
-    const int depth;
+    uint64_t id;
+    std::string caller;
+    std::string description;
+    std::chrono::high_resolution_clock::time_point start_time;
+    uint64_t depth;
 };
 
 struct ProfileInterval
 {
-    const int id;
-    const std::string caller;
-    const std::string description;
-    const std::chrono::high_resolution_clock::time_point start_time;
-    const std::chrono::high_resolution_clock::time_point end_time;
-    const int depth;
+    uint64_t id;
+    uint64_t parent_id;
+    std::string caller;
+    std::string description;
+    std::chrono::high_resolution_clock::time_point start_time;
+    std::chrono::high_resolution_clock::time_point end_time;
+    uint64_t depth;
 };
 }
 
+// Macros to provide conveniently mark profiled sections
 #define _F_BEGIN()       utility::Profile::start(__func__);
 #define _F_BEGIN2(descr) utility::Profile::start(__func__, descr);
 #define _F_END()         utility::Profile::end(__func__);
 
-static std::string beautify_duration(std::chrono::milliseconds input_seconds)
-{
-    using namespace std::chrono;
-    auto h = duration_cast<hours>(input_seconds);
-    input_seconds -= h;
-    auto m = duration_cast<minutes>(input_seconds);
-    input_seconds -= m;
-    auto s = duration_cast<seconds>(input_seconds);
-    input_seconds -= s;
-    auto ms = duration_cast<milliseconds>(input_seconds);
-
-    auto hc  = h.count();
-    auto mc  = m.count();
-    auto sc  = s.count();
-    auto msc = ms.count();
-
-    std::stringstream ss;
-    ss.fill('0');
-    if (hc)
-    {
-        ss << hc << "h";
-    }
-    if (hc || mc)
-    {
-        if (hc)
-        {
-            ss << " ";
-        }
-        ss << mc << "m";
-    }
-    if (hc || mc || sc)
-    {
-        if (hc || mc)
-        {
-            ss << " ";
-        }
-        ss << sc << 's';
-    }
-    if (hc || mc || sc || msc)
-    {
-        if (hc || mc || sc)
-        {
-            ss << " ";
-        }
-        ss << msc << "ms";
-    }
-    if (!hc && !mc && !sc && !msc)
-    {
-        ss << "-";
-    }
-
-    return ss.str();
-}
+/// Converts time to a pretty (human readable) string
+std::string beautify_duration(std::chrono::milliseconds input_seconds);
 
 class Profile
 {
+  public:
+    ~Profile();
+
+    /// @brief Begins a new profiling section
+    ///
+    /// @param caller - name of the function that the section is within
+    /// @param description - an optional description of the profiled section that will appear in the
+    ///        printed profile overview when print() is called.
+    static void start(const char* caller, const std::string& description = "");
+
+    /// @brief Ends the last profiling section.
+    ///
+    /// @param caller - name of the function that the section is within (should match the caller of
+    ///        the current section being profiled)
+    /// @returns The time elapsed for the section.
+    static std::chrono::milliseconds end(const char* caller);
+
+    /// @brief Prints an overview of profiled sections (should be called after all sections have
+    /// been closed)
+    ///
+    /// @param combined_same_calls - if true, then all calls with the same caller, description, and
+    ///        call path will be combined into one line showing total and average instead of a line
+    ///        for each call.
+    static void print(bool combined_same_calls = false);
+
+    /// @brief Suppresses printing profiling info when the static singleton is destructed.
+    static void set_quiet(const bool is_quiet);
+
+    /// @brief Sets the rank of this process to avoid multiple ranks printing information.
+    static void set_rank(const int rank);
+
+    /// @brief Resets all profiling information.  Be sure not to call this while
+    /// a profiled interval is going.
+    static void reset();
+
   private:
-    static Profile& get()
-    {
-        static Profile singleton;
-        return singleton;
-    }
+    // The current list of ongoing intervals that were started but not stopped
+    std::deque<detail::ProfileStart> starts_;
+    // Completed sections marked with start/stop for timing
+    std::deque<detail::ProfileInterval> completed_intervals_;
+    // A counter for the number of total intervals started
+    uint64_t counter_ = 0;
+    // Current depth of profiled calls
+    uint64_t depth_ = 0;
+    // If true, then profiling information will only be printed when explicitly called (not on
+    // destruction)
+    bool is_quiet_ = true;
+    // Note: MPIUtils might be destructed before Profile, so the rank must be stored
+    int rank_ = 0;
+    // The number of spaces to indent each new depth for the messages
+    int msg_pad_size_ = 3;
+
+    /// @brief Accesses the singleton instance for this process.
+    static Profile& get();
 
     Profile() = default;
 
-  public:
-    ~Profile()
-    {
-        if (rank_ == 0 && !is_quiet_ && completed_intervals_.size() > 0)
-        {
-            print();
-        }
-    }
+    /// Builds an ordered list of messages to print profiling information to the screen (does not
+    /// combine calls to the same function)
+    void build_prof_messages(std::vector<std::string>& messages, uint64_t& max_line_length_needed);
 
-    static void start(const char* caller, const std::string& description = "")
-    {
-        int depth = (int)get().starts_.size();
+    /// Builds an ordered list of messages to print profiling information to the screen (combines
+    /// calls to the same function)
+    void build_unique_prof_messages(std::vector<std::string>& messages,
+                                    uint64_t& max_line_length_needed);
 
-        get().starts_.push_back({ get().counter_++,
-                                  demangle(caller),
-                                  description,
-                                  std::chrono::high_resolution_clock::now(),
-                                  depth });
-    }
-
-    static std::chrono::milliseconds end(const char* caller)
-    {
-        auto popped_data = get().starts_.back();
-        get().starts_.pop_back();
-
-        assert(demangle(caller) == popped_data.caller);
-
-        auto end_time = std::chrono::high_resolution_clock::now();
-
-        get().completed_intervals_.push_front({ popped_data.id,
-                                                popped_data.caller,
-                                                popped_data.description,
-                                                popped_data.start_time,
-                                                end_time,
-                                                popped_data.depth });
-
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-          get().completed_intervals_.front().end_time -
-          get().completed_intervals_.front().start_time);
-
-        return duration;
-    }
-
-    void print()
-    {
-        const int pad_size = 3;
-
-        // This should always be empty, if not, check the code at whatever function is in starts_
-        if (!starts_.empty())
-        {
-            std::cout << std::endl
-                      << "Profile information cannot be printed because something went wrong."
-                      << std::endl;
-            return;
-        }
-
-        std::vector<std::string> msg_by_id(completed_intervals_.size());
-        int curr_parent_id  = -1;
-        int max_line_length = 0;
-        for (auto& interval : completed_intervals_)
-        {
-            std::string curr_pad(interval.depth * pad_size, ' ');
-
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-              interval.end_time - interval.start_time);
-
-            std::string msg   = curr_pad;
-            auto duration_str = beautify_duration(duration);
-            msg += interval.caller;
-            if (interval.description != "")
-            {
-                msg += " (" + interval.description + ")";
-            }
-            msg += ": $ " + duration_str; // Note: use $ for pad marker, to be replaced later
-
-            msg_by_id[interval.id] = msg;
-
-            if (msg.size() > max_line_length)
-            {
-                max_line_length = (int)msg.size();
-            }
-
-            curr_parent_id = interval.id;
-        }
-        max_line_length += 2;
-
-        std::cout << std::endl << std::string(max_line_length, '-') << std::endl;
-        std::cout << "Profiling results (coarse):" << std::endl << std::endl;
-        for (auto msg : msg_by_id)
-        {
-            auto find_ind = msg.find_last_of('$');
-            auto pad_size = max_line_length - msg.size();
-            std::cout << msg.substr(0, find_ind) << std::string(pad_size, ' ')
-                      << msg.substr(find_ind + 1) << std::endl;
-        }
-        std::cout << std::string(max_line_length, '-') << std::endl;
-    }
-
-    static void set_quiet(const bool is_quiet)
-    {
-        get().is_quiet_ = is_quiet;
-    }
-
-    static void set_rank(const int rank)
-    {
-        get().rank_ = rank;
-    }
-
-  private:
-    std::deque<detail::ProfileStart> starts_;
-    std::deque<detail::ProfileInterval> completed_intervals_;
-    int counter_   = 0;
-    int depth_     = 0;
-    bool is_quiet_ = false;
-    // Note: MPIUtils will probably be destructed before Profile, so the rank must be stored
-    int rank_ = 0;
+    /// @brief Print kernel for the profile overivew.
+    void print_kernel(bool combined_same_calls = false) noexcept;
 };
 }
