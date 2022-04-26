@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Range.h"
 #include "Exceptions.h"
+#include "Range.h"
 
 #include <array>
 #include <type_traits>
@@ -24,7 +24,7 @@ struct Slice
       , n_objects(n_objects_a)
     {
     }
-    Slice(const Slice&) = default;
+    Slice(const Slice<T, SizeType>&) = default;
     Slice<T, SizeType>& operator=(const Slice<T, SizeType>&) = default;
 
     T* begin() const
@@ -105,7 +105,7 @@ struct Slice
         return false;
     }
 
-    bool operator==(const Slice<T>& other) const
+    bool operator==(const Slice<T, SizeType>& other) const
     {
         if (n_objects != other.n_objects)
         {
@@ -124,40 +124,57 @@ struct Slice
     SizeType n_objects;
 };
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// Slice creators for common data types (mutable)
+
 template<typename T, typename SizeType = std::size_t>
 Slice<T, SizeType> slice(T* const data, const SizeType size)
 {
     return { data, size };
 }
 
+template<typename T, typename SizeType = std::size_t>
+Slice<T, SizeType> slice(T* const data, const SizeType rows, const SizeType cols)
+{
+    return { data, rows * cols };
+}
+
+template<typename T,
+         typename SizeType                                          = std::size_t,
+         typename std::enable_if<!std::is_enum<T>::value, T>::type* = nullptr>
+Slice<T, SizeType> slice(std::vector<T>& vec)
+{
+    return Slice<T, SizeType> { vec.data(), static_cast<SizeType>(vec.size()) };
+}
+
+template<typename T,
+         typename SizeType                                         = std::size_t,
+         typename std::enable_if<std::is_enum<T>::value, T>::type* = nullptr>
+Slice<typename std::underlying_type<T>::type, SizeType> slice(std::vector<T>& vec)
+{
+    using under_type = typename std::underlying_type<T>::type;
+    return Slice<under_type, SizeType> { reinterpret_cast<under_type*>(vec.data()),
+                                         static_cast<SizeType>(vec.size()) };
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// Slice creators for common data types (const)
+
 template<typename T, typename std::enable_if<!std::is_enum<T>::value, T>::type* = nullptr>
-Slice<const T> slice(const std::vector<T>& vec)
+Slice<const T> slice_c(const std::vector<T>& vec)
 {
     return Slice<const T> { vec.data(), vec.size() };
 }
 
-template<typename T, typename std::enable_if<!std::is_enum<T>::value, T>::type* = nullptr>
-Slice<T> slice(std::vector<T>& vec)
-{
-    return Slice<T> { vec.data(), vec.size() };
-}
-
 template<typename T, typename std::enable_if<std::is_enum<T>::value, T>::type* = nullptr>
-Slice<const typename std::underlying_type<T>::type> slice(const std::vector<T>& vec)
+Slice<const typename std::underlying_type<T>::type> slice_c(const std::vector<T>& vec)
 {
     using under_type = typename std::underlying_type<T>::type;
     return Slice<const under_type> { reinterpret_cast<const under_type*>(vec.data()), vec.size() };
 }
 
-template<typename T, typename std::enable_if<std::is_enum<T>::value, T>::type* = nullptr>
-Slice<typename std::underlying_type<T>::type> slice(std::vector<T>& vec)
-{
-    using under_type = typename std::underlying_type<T>::type;
-    return Slice<under_type> { reinterpret_cast<under_type*>(vec.data()), vec.size() };
-}
-
 template<typename T, int DIM>
-Slice<T> slice(const std::array<T, DIM>& arr)
+Slice<const T> slice_c(const std::array<T, DIM>& arr)
 {
     return Slice<T>(arr.data(), arr.size());
 }
