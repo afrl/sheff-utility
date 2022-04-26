@@ -1249,7 +1249,9 @@ inline std::vector<typename std::remove_const<T>::type> MPIUtils::scatter_arrays
 {
     VERIFY_INIT("scatter_arrays");
 
-    return scatter_arrays(utility::slice(data_to_scatter), utility::slice(offsets), use_local_comm);
+    return scatter_arrays(utility::slice_c(data_to_scatter),
+                          utility::slice_c(offsets),
+                          use_local_comm);
 }
 
 template<typename T,
@@ -1309,7 +1311,9 @@ inline std::vector<typename std::remove_const<T>::type> MPIUtils::scatter_arrays
       comm);
     return recv_buff;
 #else
-    return data_to_scatter;
+    return std::vector<typename std::remove_const<T>::type>(data_to_scatter.data(),
+                                                            data_to_scatter.data() +
+                                                              data_to_scatter.size());
 #endif
 }
 
