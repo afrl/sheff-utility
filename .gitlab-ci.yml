@@ -6,7 +6,7 @@ build:
   before_script:
   - echo "Prebuild, installing prerequisites"
   - apt-get update && apt-get -y install cmake && apt-get -y install python3-dev python3-pip python3-numpy
-  - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.act3-ace.com/sheff/dev_tools.git
+  - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@git.act3-ace.com/sheff/dev_tools.git
   - python3 --version
   - python3 -m pip install -r ./dev_tools/requirements.txt
   - export SHEFF_TOOLS=$PWD/dev_tools
