@@ -13,7 +13,7 @@ build:
   - export PYTHONPATH=$SHEFF_TOOLS:$PYTHONPATH
   # It appears they blocked using the CI_JOB_TOKEN to access another project's artifacts for non-premium users
   # I am using a workaround with a repo access token
-  - test -d ./json || curl --location --output artifacts.zip "https://gitlab.hyperthought.io/api/v4/projects/41/jobs/artifacts/main/download?access_token=$NLOHMANN_JSON_ACCESS&job=build" && unzip artifacts.zip && rm artifacts.zip
+  - test -d ./json || curl --location --output artifacts.zip "https://git.act3-ace.com/api/v4/projects/818/jobs/artifacts/main/download?job=build&job_token=$CI_JOB_TOKEN" && unzip artifacts.zip && rm artifacts.zip
   # now, there will be a path: json/install_dir
 
   # Theoretically, this should allow easy access to the artifacts in the other project, but it has a bug
