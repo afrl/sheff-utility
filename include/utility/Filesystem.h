@@ -7,6 +7,10 @@
  * and from testing results with that compiler and with VS 2017.
  */
 
+#ifndef SHEFF_FILESYSTEM_INCLUDED
+
+#define SHEFF_FILESYSTEM_INCLUDED
+
 #ifdef HAVE_FILESYSTEM
 
 #if __has_include(<filesystem>)
@@ -663,3 +667,4 @@ static bool copy_file(const path& a, const path& b, copy_options opts = copy_opt
 namespace fs = std::experimental::filesystem;
 
 #endif // End #ifdef HAVE_FILESYSTEM
+#endif

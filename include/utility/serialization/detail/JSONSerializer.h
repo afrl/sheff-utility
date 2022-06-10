@@ -4,6 +4,7 @@
 #include "nlohmann/json.hpp"
 
 #include <deque>
+#include <sstream>
 
 namespace utility
 {
