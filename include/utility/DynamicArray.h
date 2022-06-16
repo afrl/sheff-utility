@@ -118,9 +118,7 @@ class DynamicArray
     T* objects_;
     SizeType size_;
 
-    /// Destroys objects and deallocates memory, returning objects to a nullptr
-    /// and size to 0.
-    void cleanup_if_needed(T*& objects, SizeType& size);
+    using allocator_traits = std::allocator_traits<decltype(allocator_)>;
 
     void resize_array(const SizeType& new_size);
 
@@ -154,7 +152,7 @@ inline DynamicArray<T, SizeType>::DynamicArray(const SizeType num_objects)
 
         for (SizeType i = 0; i < num_objects; i++)
         {
-            std::allocator_traits<std::allocator<T>>::construct(allocator_, objects_ + i);
+            allocator_traits::construct(allocator_, objects_ + i);
         }
     }
 }
@@ -172,9 +170,7 @@ inline DynamicArray<T, SizeType>::DynamicArray(TContainer&& objects)
         SizeType pos = 0;
         for (auto& obj : objects)
         {
-            std::allocator_traits<std::allocator<T>>::construct(allocator_,
-                                                                objects_ + pos++,
-                                                                std::move(obj));
+            allocator_traits::construct(allocator_, objects_ + pos++, std::move(obj));
         }
     }
 }
@@ -192,7 +188,7 @@ inline DynamicArray<T, SizeType>::DynamicArray(const TContainer& objects)
         SizeType pos = 0;
         for (auto& obj : objects)
         {
-            std::allocator_traits<std::allocator<T>>::construct(allocator_, objects_ + pos++, obj);
+            allocator_traits::construct(allocator_, objects_ + pos++, obj);
         }
     }
 }
@@ -208,7 +204,7 @@ inline DynamicArray<T, SizeType>::DynamicArray(std::initializer_list<T> objects)
         SizeType i = 0;
         for (auto obj : objects)
         {
-            std::allocator_traits<std::allocator<T>>::construct(allocator_, objects_ + i++, obj);
+            allocator_traits::construct(allocator_, objects_ + i++, obj);
         }
     }
 }
@@ -223,9 +219,7 @@ inline DynamicArray<T, SizeType>::DynamicArray(const DynamicArray& arg)
         size_    = static_cast<SizeType>(arg.size_);
         for (SizeType i = 0; i < size_; i++)
         {
-            std::allocator_traits<std::allocator<T>>::construct(allocator_,
-                                                                objects_ + i,
-                                                                arg.objects_[i]);
+            allocator_traits::construct(allocator_, objects_ + i, arg.objects_[i]);
         }
     }
 }
@@ -284,25 +278,21 @@ inline void DynamicArray<T, SizeType>::push_back(const T& entry)
     assert(!address_is_in_array(&entry));
 
     resize_array(size_ + 1);
-    std::allocator_traits<std::allocator<T>>::construct(allocator_, &objects_[size_ - 1], entry);
+    allocator_traits::construct(allocator_, &objects_[size_ - 1], entry);
 }
 
 template<typename T, typename SizeType>
 inline void DynamicArray<T, SizeType>::push_back(T&& entry)
 {
     resize_array(size_ + 1);
-    std::allocator_traits<std::allocator<T>>::construct(allocator_,
-                                                        &objects_[size_ - 1],
-                                                        std::move(entry));
+    allocator_traits::construct(allocator_, &objects_[size_ - 1], std::move(entry));
 }
 
 template<typename T, typename SizeType>
 inline void DynamicArray<T, SizeType>::push_back_duplicate(const SizeType index_to_duplicate)
 {
     resize_array(size_ + 1);
-    std::allocator_traits<std::allocator<T>>::construct(allocator_,
-                                                        &objects_[size_ - 1],
-                                                        objects_[index_to_duplicate]);
+    allocator_traits::construct(allocator_, &objects_[size_ - 1], objects_[index_to_duplicate]);
 }
 
 template<typename T, typename SizeType>
@@ -313,7 +303,7 @@ inline void DynamicArray<T, SizeType>::resize(const SizeType num_objects)
 
     for (auto i = tmp_size; i < size_; i++)
     {
-        std::allocator_traits<std::allocator<T>>::construct(allocator_, objects_ + i);
+        allocator_traits::construct(allocator_, objects_ + i);
     }
 }
 
@@ -321,7 +311,7 @@ template<typename T, typename SizeType>
 inline void DynamicArray<T, SizeType>::push_back_empty()
 {
     resize_array(size_ + 1);
-    std::allocator_traits<std::allocator<T>>::construct(allocator_, objects_ + size_ - 1);
+    allocator_traits::construct(allocator_, objects_ + size_ - 1);
 }
 
 template<typename T, typename SizeType>
@@ -331,13 +321,9 @@ inline void DynamicArray<T, SizeType>::insert(const SizeType position, const T& 
     // Note: second condition in for statement is for unsigned types
     for (SizeType i = size_ - 1; i >= position && i < size_; i--)
     {
-        std::allocator_traits<std::allocator<T>>::construct(allocator_,
-                                                            &objects_[i],
-                                                            std::move(objects_[i - 1]));
+        allocator_traits::construct(allocator_, &objects_[i], std::move(objects_[i - 1]));
     }
-    std::allocator_traits<std::allocator<T>>::construct(allocator_,
-                                                        &objects_[position],
-                                                        entry);
+    allocator_traits::construct(allocator_, &objects_[position], entry);
 }
 
 template<typename T, typename SizeType>
@@ -346,13 +332,9 @@ inline void DynamicArray<T, SizeType>::insert(const SizeType position, T&& entry
     resize_array(size_ + 1);
     for (SizeType i = size_ - 1; i >= position; i--)
     {
-        std::allocator_traits<std::allocator<T>>::construct(allocator_,
-                                                            &objects_[i],
-                                                            std::move(objects_[i-1]));
+        allocator_traits::construct(allocator_, &objects_[i], std::move(objects_[i - 1]));
     }
-    std::allocator_traits<std::allocator<T>>::construct(allocator_,
-                                                        &objects_[position],
-                                                        std::move(entry));
+    allocator_traits::construct(allocator_, &objects_[position], std::move(entry));
 }
 
 template<typename T, typename SizeType>
@@ -383,7 +365,7 @@ inline DynamicArray<T, SizeType>& DynamicArray<T, SizeType>::operator=(
     SizeType i = 0;
     for (auto obj : objects)
     {
-        std::allocator_traits<std::allocator<T>>::construct(allocator_, objects_ + i++, obj);
+        allocator_traits::construct(allocator_, objects_ + i++, obj);
     }
     return *this;
 }
@@ -398,9 +380,7 @@ inline DynamicArray<T, SizeType>& DynamicArray<T, SizeType>::operator=(EntryPtrC
     SizeType pos = 0;
     for (T& obj : objects)
     {
-        std::allocator_traits<std::allocator<T>>::construct(allocator_,
-                                                            objects_ + pos++,
-                                                            std::move(obj));
+        allocator_traits::construct(allocator_, objects_ + pos++, std::move(obj));
     }
     return *this;
 }
@@ -414,7 +394,7 @@ inline DynamicArray<T, SizeType>& DynamicArray<T, SizeType>::operator=(const Dyn
     SizeType i = 0;
     for (auto obj : other)
     {
-        std::allocator_traits<std::allocator<T>>::construct(allocator_, objects_ + i++, obj);
+        allocator_traits::construct(allocator_, objects_ + i++, obj);
     }
     return *this;
 }
@@ -452,23 +432,17 @@ inline void DynamicArray<T, SizeType>::swap(DynamicArray& other)
 template<typename T, typename SizeType>
 inline void DynamicArray<T, SizeType>::clear()
 {
-    cleanup_if_needed(objects_, size_);
-}
-
-template<typename T, typename SizeType>
-inline void DynamicArray<T, SizeType>::cleanup_if_needed(T*& objects, SizeType& size)
-{
-    if (objects != nullptr)
+    if (objects_ != nullptr)
     {
-        for (auto i = 0; i < size; i++)
+        for (auto i = 0; i < size_; i++)
         {
-            allocator_.destroy(objects + i);
+            allocator_.destroy(objects_ + i);
         }
-        allocator_.deallocate(objects, size);
+        allocator_.deallocate(objects_, size_);
     }
 
-    objects = nullptr;
-    size    = 0;
+    objects_ = nullptr;
+    size_    = 0;
 }
 
 template<typename T, typename SizeType>
@@ -481,20 +455,17 @@ inline void DynamicArray<T, SizeType>::resize_array(const SizeType& new_size)
 
     if (objects_)
     {
-        auto tmp      = objects_;
-        auto tmp_size = size_;
-
-        size_         = new_size;
-        objects_      = allocator_.allocate(size_);
-        auto loop_end = new_size < tmp_size ? new_size : tmp_size;
+        T* new_objects    = allocator_.allocate(new_size);
+        SizeType loop_end = new_size < size_ ? new_size : size_;
         for (SizeType i = 0; i < loop_end; i++)
         {
-            std::allocator_traits<std::allocator<T>>::construct(allocator_,
-                                                                &objects_[i],
-                                                                std::move(tmp[i]));
+            allocator_traits::construct(allocator_, &new_objects[i], std::move(objects_[i]));
         }
 
-        cleanup_if_needed(tmp, tmp_size);
+        clear();
+
+        objects_ = new_objects;
+        size_    = new_size;
     }
     else
     {

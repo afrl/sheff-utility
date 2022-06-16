@@ -178,4 +178,16 @@ Slice<const T> slice_c(const std::array<T, DIM>& arr)
 {
     return Slice<T>(arr.data(), arr.size());
 }
+
+template<typename T, typename SizeType = std::size_t>
+Slice<const T, SizeType> slice_c(const T* const data, const SizeType size)
+{
+    return { data, size };
+}
+
+template<typename T, typename SizeType = std::size_t>
+Slice<const T, SizeType> slice_c(const T* const data, const SizeType rows, const SizeType cols)
+{
+    return { data, rows * cols };
+}
 }
