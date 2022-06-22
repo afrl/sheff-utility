@@ -7,6 +7,7 @@
 #include <limits>
 #include <memory>
 #include <vector>
+#include <iostream>
 
 namespace utility
 {
@@ -80,6 +81,10 @@ class DynamicArray
     /// Inserts the given entry just before the indicated position. (shifts the elements at
     /// position and higher)
     void insert(const SizeType position, T&& entry);
+    /// Inserts a duplicate of the object at the given index (original indexing) just before the
+    /// indicated insertion position. This shifts the elements at position_to_insert and higher.
+    void insert_duplicate(const SizeType position_to_insert,
+                          const SizeType original_position_to_duplicate);
 
     const T& operator[](const SizeType i) const;
     T& operator[](const SizeType i);
@@ -271,6 +276,18 @@ inline const SizeType& DynamicArray<T, SizeType>::size() const
 }
 
 template<typename T, typename SizeType>
+inline void DynamicArray<T, SizeType>::resize(const SizeType num_objects)
+{
+    auto tmp_size = size_;
+    resize_array(num_objects);
+
+    for (auto i = tmp_size; i < size_; i++)
+    {
+        allocator_traits::construct(allocator_, objects_ + i);
+    }
+}
+
+template<typename T, typename SizeType>
 inline void DynamicArray<T, SizeType>::push_back(const T& entry)
 {
     // Since, resize will change the address of the objects, you can't push back a copy in the
@@ -284,6 +301,10 @@ inline void DynamicArray<T, SizeType>::push_back(const T& entry)
 template<typename T, typename SizeType>
 inline void DynamicArray<T, SizeType>::push_back(T&& entry)
 {
+    // Since, resize will change the address of the objects, you can't push back a copy in the
+    // array.  Use push_back_duplicate instead.
+    assert(!address_is_in_array(&entry));
+
     resize_array(size_ + 1);
     allocator_traits::construct(allocator_, &objects_[size_ - 1], std::move(entry));
 }
@@ -295,17 +316,6 @@ inline void DynamicArray<T, SizeType>::push_back_duplicate(const SizeType index_
     allocator_traits::construct(allocator_, &objects_[size_ - 1], objects_[index_to_duplicate]);
 }
 
-template<typename T, typename SizeType>
-inline void DynamicArray<T, SizeType>::resize(const SizeType num_objects)
-{
-    auto tmp_size = size_;
-    resize_array(num_objects);
-
-    for (auto i = tmp_size; i < size_; i++)
-    {
-        allocator_traits::construct(allocator_, objects_ + i);
-    }
-}
 
 template<typename T, typename SizeType>
 inline void DynamicArray<T, SizeType>::push_back_empty()
@@ -317,9 +327,12 @@ inline void DynamicArray<T, SizeType>::push_back_empty()
 template<typename T, typename SizeType>
 inline void DynamicArray<T, SizeType>::insert(const SizeType position, const T& entry)
 {
+    // Since, resize will change the address of the objects, you can't push back a copy in the
+    // array.  Use push_back_duplicate instead.
+    assert(!address_is_in_array(&entry));
+
     resize_array(size_ + 1);
-    // Note: second condition in for statement is for unsigned types
-    for (SizeType i = size_ - 1; i >= position && i < size_; i--)
+    for (SizeType i = size_ - 1; i > position; i--)
     {
         allocator_traits::construct(allocator_, &objects_[i], std::move(objects_[i - 1]));
     }
@@ -329,12 +342,34 @@ inline void DynamicArray<T, SizeType>::insert(const SizeType position, const T& 
 template<typename T, typename SizeType>
 inline void DynamicArray<T, SizeType>::insert(const SizeType position, T&& entry)
 {
+    // Since, resize will change the address of the objects, you can't push back a copy in the
+    // array.  Use push_back_duplicate instead.
+    assert(!address_is_in_array(&entry));
+
     resize_array(size_ + 1);
-    for (SizeType i = size_ - 1; i >= position; i--)
+    for (SizeType i = size_ - 1; i > position; i--)
     {
         allocator_traits::construct(allocator_, &objects_[i], std::move(objects_[i - 1]));
     }
     allocator_traits::construct(allocator_, &objects_[position], std::move(entry));
+}
+
+template<typename T, typename SizeType>
+inline void DynamicArray<T, SizeType>::insert_duplicate(
+  const SizeType position_to_insert,
+  const SizeType original_position_to_duplicate)
+{
+    resize_array(size_ + 1);
+    for (SizeType i = size_ - 1; i > position_to_insert; i--)
+    {
+        allocator_traits::construct(allocator_, &objects_[i], std::move(objects_[i - 1]));
+    }
+    const SizeType index_to_duplicate = original_position_to_duplicate < position_to_insert
+                                          ? original_position_to_duplicate
+                                          : original_position_to_duplicate + 1;
+    allocator_traits::construct(allocator_,
+                                &objects_[position_to_insert],
+                                objects_[index_to_duplicate]);
 }
 
 template<typename T, typename SizeType>
