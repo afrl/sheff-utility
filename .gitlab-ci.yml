@@ -1,53 +1,22 @@
-image: gcc:9.4.0
+include:
+  - project: 'sheff/sheff_gitlab_ci'
+    ref: main
+    file: 'setup_build.yml'
+  - project: 'sheff/sheff_gitlab_ci'
+    ref: main
+    file: 'setup_doxygen.yml'
+
+stages:
+  - build
+  - deploy
 
 build:
   stage: build
 
-  before_script:
-  - echo "Installing CMake"
-  # CMake with this OS is too old, so get the latest
-  - mkdir ./temp
-  - cd ./temp
-  - wget https://github.com/Kitware/CMake/releases/download/v3.23.1/cmake-3.23.1-linux-x86_64.sh 
-  - mkdir /opt/cmake
-  - chmod u+x ./cmake-3.23.1-linux-x86_64.sh
-  - ./cmake-3.23.1-linux-x86_64.sh --prefix=/opt/cmake --skip-license
-  - export PATH=/opt/cmake/bin:$PATH
-  - cd ../
-  - cmake --version
-
-  - echo "Installing Python and SHEFF dev tools"
-  - apt-get update && apt-get -y install python3-dev python3-pip python3-numpy
-  - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@git.act3-ace.com/sheff/dev_tools.git
-  - python3 --version
-  - python3 -m pip install -r ./dev_tools/requirements.txt
-  - export SHEFF_TOOLS=$PWD/dev_tools
-  - export PYTHONPATH=$SHEFF_TOOLS:$PYTHONPATH
-
-  # Get the latest artifacts from the JSON library
-  - test -d ./json || curl --location --output artifacts.zip "https://git.act3-ace.com/api/v4/projects/818/jobs/artifacts/main/download?job=build&job_token=$CI_JOB_TOKEN" && unzip artifacts.zip && rm artifacts.zip
-  # now, there will be a path: json/install_dir
-
   script:
+    # Ensure the latest JSON artifacts are in ../json/install_dir
+    - test -d ../json || curl --location --output artifacts.zip "https://git.act3-ace.com/api/v4/projects/818/jobs/artifacts/main/download?job=build&job_token=$CI_JOB_TOKEN" && unzip artifacts.zip && rm artifacts.zip && mkdir ../json && mv ./install_dir ../json/install_dir
+    
     - python3 make.py --config --build --verbose --make-tests --test
     - python3 make.py --config --build --verbose --make-tests --mode=RelWithDebInfo
-    # I should have make.py exit with code 1 when an error occurs.  For now, use ls to fail if build failed.
-    - ls install_dir/lib
 
-  artifacts:
-    untracked: true
-
-pages:
-  stage: deploy
-  before_script:
-  - echo "Prebuild, installing prerequisites"
-  - apt-get update && apt-get -y install doxygen
-  script:
-    - cd docs
-    - doxygen Doxyfile
-    - cd ../
-    - mkdir public
-    - cp -r docs/html/* public/
-  artifacts:
-    paths:
-      - public

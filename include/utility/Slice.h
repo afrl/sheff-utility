@@ -4,6 +4,7 @@
 #include "Range.h"
 
 #include <array>
+#include <cinttypes>
 #include <type_traits>
 #include <vector>
 
@@ -11,7 +12,7 @@ namespace utility
 {
 /// Inspired by Rust, a slice refers to an array of a dynamic size in a contiguous
 /// region of memory.
-template<typename T, typename SizeType = std::size_t>
+template<typename T, typename SizeType = uint64_t>
 struct Slice
 {
     Slice()
@@ -134,7 +135,7 @@ Slice<T, SizeType> slice(T* const data, const SizeType size)
 }
 
 template<typename T, typename SizeType = std::size_t>
-Slice<T, SizeType> slice(T* const data, const SizeType rows, const SizeType cols)
+Slice<T, SizeType> slice_m(T* const data, const SizeType rows, const SizeType cols)
 {
     return { data, rows * cols };
 }

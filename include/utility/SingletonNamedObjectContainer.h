@@ -199,7 +199,7 @@ inline SingletonNamedObjectContainerRef<T> SingletonNamedObjectContainer<T>::add
     std::unique_lock<std::shared_timed_mutex> lock(mutex_);
     assert(name_to_index_map_.count(name) == 0);
 
-    objects_.push_back(object.clone());
+    objects_.push_back(std::make_unique<T>(object));
     Index new_index          = static_cast<Index>(objects_.size() - 1);
     name_to_index_map_[name] = new_index;
     return { new_index };

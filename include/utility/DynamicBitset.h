@@ -49,7 +49,8 @@ class DynamicBitset
     {
         _UTIL_ASSERT(n_bits < (uint64_t)256 * BLOCK_SIZE,
                      "Requested bitset size is greater than the maximum allowable size.");
-        BlockSizeType n_blocks = n_bits / BLOCK_SIZE + (n_bits % BLOCK_SIZE != 0);
+        BlockSizeType n_blocks =
+          static_cast<BlockSizeType>(n_bits / BLOCK_SIZE + (n_bits % BLOCK_SIZE != 0));
         bitset_blocks_.resize(n_blocks);
     }
     inline DynamicBitset& flip(const SizeType& i)
@@ -163,10 +164,10 @@ class DynamicBitset
     /// within the block
     inline std::pair<std::bitset<BLOCK_SIZE>&, BlockSizeType> get(const SizeType& i)
     {
-        const auto block_index = i / BLOCK_SIZE;
+        const auto block_index = static_cast<BlockSizeType>(i / BLOCK_SIZE);
         _UTIL_ASSERT_C(i / BLOCK_SIZE < bitset_blocks_.size(), "Exceeds # of blocks.");
         auto& block      = bitset_blocks_[block_index];
-        const auto index = i % BLOCK_SIZE;
+        const auto index = static_cast<BlockSizeType>(i % BLOCK_SIZE);
         _UTIL_ASSERT_C(index < block.size(), "Exceeds size in block.");
         return { block, index };
     }

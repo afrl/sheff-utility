@@ -471,9 +471,9 @@ inline void DynamicArray<T, SizeType>::clear()
     {
         for (auto i = 0; i < size_; i++)
         {
-            allocator_.destroy(objects_ + i);
+            allocator_traits::destroy(allocator_, objects_ + i);
         }
-        allocator_.deallocate(objects_, size_);
+        allocator_traits::deallocate(allocator_, objects_, size_);
     }
 
     objects_ = nullptr;

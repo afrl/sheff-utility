@@ -1247,8 +1247,6 @@ inline std::vector<typename std::remove_const<T>::type> MPIUtils::scatter_arrays
   const std::vector<OffsetType>& offsets,
   const bool use_local_comm)
 {
-    VERIFY_INIT("scatter_arrays");
-
     return scatter_arrays(utility::slice_c(data_to_scatter),
                           utility::slice_c(offsets),
                           use_local_comm);
