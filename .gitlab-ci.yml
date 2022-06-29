@@ -15,7 +15,7 @@ build:
 
   script:
     # Ensure the latest JSON artifacts are in ../json/install_dir
-    - test -d ../json || curl --location --output artifacts.zip "https://git.act3-ace.com/api/v4/projects/818/jobs/artifacts/main/download?job=build&job_token=$CI_JOB_TOKEN" && unzip artifacts.zip && rm artifacts.zip && mkdir ../json && mv ./install_dir ../json/install_dir
+    - ./sheff_gitlab_ci/import_json.sh
     
     - python3 make.py --config --build --verbose --make-tests --test
     - python3 make.py --config --build --verbose --make-tests --mode=RelWithDebInfo
