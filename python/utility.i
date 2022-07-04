@@ -50,12 +50,19 @@
 %include "utility/Slice.h"
 %template(SliceInt) utility::Slice<int, uint64_t>;
 %template(SliceDouble) utility::Slice<double, uint64_t>;
+%template(SliceCInt) utility::Slice<const int, uint64_t>;
+%template(SliceCDouble) utility::Slice<const double, uint64_t>;
 
 %apply (double* INPLACE_ARRAY1, int DIM1) {(double* data, int size)}
+%apply (double* INPLACE_ARRAY1, int DIM1) {(const double* data, int size)}
 %inline
 %{
 static utility::Slice<double> slice(double* data, int size)
 {
     return utility::Slice<double>(data, size);
+}
+static utility::Slice<const double> slice_c(const double* data, int size)
+{
+    return utility::Slice<const double>(data, size);
 }
 %}

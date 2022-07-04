@@ -40,6 +40,11 @@ struct SingletonNamedObjectContainerRef
     {
     }
 
+    bool operator==(const SingletonNamedObjectContainerRef& other) const
+    {
+        return index == other.index;
+    }
+
     /// @brief Returns whether the reference is null, which is the case if the default constructor
     /// was called but the index as not set.
     bool is_null() const

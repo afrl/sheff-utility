@@ -29,8 +29,17 @@
 %apply(SWIGTYPE *DATA, size_t SIZE) { (double* const data, const uint64_t size) };
 %apply(SWIGTYPE *DATA, size_t ROWS, size_t COLS) { (double* const data, const uint64_t rows, const uint64_t cols) };
 
+%apply(SWIGTYPE *DATA, size_t SIZE) { (const double* begin_a, uint64_t n_objects_a) };
+%apply(SWIGTYPE *DATA, size_t SIZE) { (const double* const data, const uint64_t size) };
+%apply(SWIGTYPE *DATA, size_t ROWS, size_t COLS) { (const double* const data, const uint64_t rows, const uint64_t cols) };
+
 %include "utility/Slice.h"
 %template(SliceInt) utility::Slice<int>;
 %template(SliceDouble) utility::Slice<double>;
 %template(slice) utility::slice<int, uint64_t>;
 %template(slice) utility::slice<double, uint64_t>;
+
+%template(SliceCInt) utility::Slice<const int>;
+%template(SliceCDouble) utility::Slice<const double>;
+%template(slice_c) utility::slice_c<int, uint64_t>;
+%template(slice_c) utility::slice_c<double, uint64_t>;

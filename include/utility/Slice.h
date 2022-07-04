@@ -161,25 +161,6 @@ Slice<typename std::underlying_type<T>::type, SizeType> slice(std::vector<T>& ve
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Slice creators for common data types (const)
 
-template<typename T, typename std::enable_if<!std::is_enum<T>::value, T>::type* = nullptr>
-Slice<const T> slice_c(const std::vector<T>& vec)
-{
-    return Slice<const T> { vec.data(), vec.size() };
-}
-
-template<typename T, typename std::enable_if<std::is_enum<T>::value, T>::type* = nullptr>
-Slice<const typename std::underlying_type<T>::type> slice_c(const std::vector<T>& vec)
-{
-    using under_type = typename std::underlying_type<T>::type;
-    return Slice<const under_type> { reinterpret_cast<const under_type*>(vec.data()), vec.size() };
-}
-
-template<typename T, int DIM>
-Slice<const T> slice_c(const std::array<T, DIM>& arr)
-{
-    return Slice<T>(arr.data(), arr.size());
-}
-
 template<typename T, typename SizeType = std::size_t>
 Slice<const T, SizeType> slice_c(const T* const data, const SizeType size)
 {
@@ -191,4 +172,29 @@ Slice<const T, SizeType> slice_c(const T* const data, const SizeType rows, const
 {
     return { data, rows * cols };
 }
+
+template<typename T,
+         typename SizeType                                          = std::size_t,
+         typename std::enable_if<!std::is_enum<T>::value, T>::type* = nullptr>
+Slice<const T, SizeType> slice_c(const std::vector<T>& vec)
+{
+    return Slice<const T, SizeType> { vec.data(), vec.size() };
+}
+
+template<typename T,
+         typename SizeType                                         = std::size_t,
+         typename std::enable_if<std::is_enum<T>::value, T>::type* = nullptr>
+Slice<const typename std::underlying_type<T>::type, SizeType> slice_c(const std::vector<T>& vec)
+{
+    using under_type = typename std::underlying_type<T>::type;
+    return Slice<const under_type, SizeType> { reinterpret_cast<const under_type*>(vec.data()),
+                                               vec.size() };
+}
+
+template<typename T, typename SizeType = std::size_t, int DIM>
+Slice<const T, SizeType> slice_c(const std::array<T, DIM>& arr)
+{
+    return Slice<const T, SizeType>(arr.data(), arr.size());
+}
+
 }
