@@ -1,8 +1,8 @@
 include:
-  - project: 'sheff/sheff_gitlab_ci'
+  - project: 'rxcc_computation/sheff/devops/sheff_gitlab_ci'
     ref: main
     file: 'setup_build.yml'
-  - project: 'sheff/sheff_gitlab_ci'
+  - project: 'rxcc_computation/sheff/devops/sheff_gitlab_ci'
     ref: main
     file: 'setup_doxygen.yml'
 
@@ -10,12 +10,12 @@ stages:
   - build
   - deploy
 
-build:
-  stage: build
+build_ubuntu_22:
+  extends: .build_ubuntu_22
 
   script:
     # Ensure the latest JSON artifacts are in ../json/install_dir
-    - ./sheff_gitlab_ci/import_json.sh
+    - ./sheff_gitlab_ci/import_artifacts.sh json $OS
     
     - python3 make.py --config --build --verbose --make-tests --test
     - python3 make.py --config --build --verbose --make-tests --mode=RelWithDebInfo
