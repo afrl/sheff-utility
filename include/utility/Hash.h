@@ -1,10 +1,11 @@
 #pragma once
 
 #include <algorithm>  // std::stable_sort
+#include <cstdint>    // UINT64_C macro
 #include <functional> // std::hash
 #include <numeric>    // std::iota
 #include <utility>    // std::pair
-#include <vector>
+#include <vector>     // std::vector
 
 namespace utility
 {

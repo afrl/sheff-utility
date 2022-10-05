@@ -20,3 +20,12 @@ build_ubuntu_22:
     - python3 make.py --config --build --verbose --make-tests --test
     - python3 make.py --config --build --verbose --make-tests --mode=RelWithDebInfo
 
+build_centos_7:
+  extends: .build_centos_7
+
+  script:
+    # Ensure the latest JSON artifacts are in ../json/install_dir
+    - ./sheff_gitlab_ci/import_artifacts.sh json $OS
+    
+    - python3 make.py --config --build --verbose --make-tests --test
+    - python3 make.py --config --build --verbose --make-tests --mode=RelWithDebInfo
