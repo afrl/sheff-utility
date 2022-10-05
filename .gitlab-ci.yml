@@ -29,3 +29,4 @@ build_centos_7:
     
     - python3 make.py --config --build --verbose --make-tests --test
     - python3 make.py --config --build --verbose --make-tests --mode=RelWithDebInfo
+
