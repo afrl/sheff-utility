@@ -68,6 +68,12 @@ class IOUtils
     template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
     static void binary_write(std::ostream& out, const std::vector<T>& val);
 
+    /// Writes a slice of fundamental types to a binary file a the current stream position
+    template<typename T,
+             typename SizeType,
+             typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
+    static void binary_write(std::ostream& out, const utility::Slice<T, SizeType>& val);
+
     /// Writes an array of a fundamental type to a binary file a the current stream position
     template<typename T, typename std::enable_if<std::is_fundamental<T>::value, T>::type* = nullptr>
     static void binary_write(std::ostream& out, T* arr, const std::streamsize size);
@@ -156,6 +162,19 @@ inline void IOUtils::binary_write(std::ostream& out, const std::vector<T>& v)
     if (v.size() == 0)
         return;
     out.write(reinterpret_cast<const char*>(&v[0]),
+              static_cast<std::streamsize>(v.size() * sizeof(T)));
+}
+
+template<typename T,
+         typename SizeType,
+         typename std::enable_if<std::is_fundamental<T>::value, T>::type*>
+inline void IOUtils::binary_write(std::ostream& out, const utility::Slice<T, SizeType>& v)
+{
+    if (v.size() == 0)
+    {
+        return;
+    }
+    out.write(reinterpret_cast<const char*>(v.data()),
               static_cast<std::streamsize>(v.size() * sizeof(T)));
 }
 

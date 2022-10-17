@@ -26,6 +26,12 @@ unsigned int str_to_uint(const std::string& s);
 unsigned int str_to_axis(const std::string& s);
 /// Tokenizes a string based on whitespace.  For example, " foo   bar " becomes { "foo", "bar" }
 std::vector<std::string> tokenize(const std::string& s);
+/// Tokenizes a string based on delimiter.  For example, " foo, 2 bar " becomes { "foo", "2 bar" }
+std::vector<std::string> tokenize(const std::string& s, const char delimiter);
+/// Returns true if the given string contains the substring using case-sensitive comparison
+bool contains_substring(const std::string& s, const std::string& substr);
+/// Returns true if the given string contains the substring using case-insensitive comparison
+bool contains_isubstring(const std::string& s, const std::string& substr);
 /// Erases all occurences of substr from s
 void remove_substring(std::string& s, const std::string& substr);
 /// Replaces all occurences of substr from s.

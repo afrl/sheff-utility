@@ -87,6 +87,35 @@ std::vector<std::string> tokenize(const std::string& s)
     return tokens;
 }
 
+std::vector<std::string> tokenize(const std::string& s, const char delimiter)
+{
+    std::stringstream ss(s);
+    std::string temp;
+
+    std::vector<std::string> tokens;
+    while (getline(ss, temp, delimiter))
+    {
+        tokens.push_back(utility::trim(temp));
+    }
+    return tokens;
+}
+
+bool contains_substring(const std::string& s, const std::string& substr)
+{
+    return s.find(substr) != std::string::npos;
+}
+
+bool contains_isubstring(const std::string& s, const std::string& substr)
+{
+    std::string s_upper = s;
+    str_to_upper(s_upper);
+
+    std::string substr_upper = substr;
+    str_to_upper(substr_upper);
+
+    return s_upper.find(substr_upper) != std::string::npos;
+}
+
 void remove_substring(std::string& s, const std::string& substr)
 {
     size_t pos = std::string::npos;
