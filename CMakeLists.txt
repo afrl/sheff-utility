@@ -42,6 +42,8 @@ macro(SPECIAL_TARGET_COMMANDS)
         #target_link_libraries(${MAIN_COMPONENT} PUBLIC -static-libstdc++fs)
     elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel" )
         # Trying the same thing with Intel, linked against newer GCC libs, but no luck
+        message(STATUS "Using stdc++fs !!!!!!!!!!!!!!")
+        target_compile_options(${MAIN_COMPONENT} PUBLIC -std=c++17 )
         target_link_libraries(${MAIN_COMPONENT} PUBLIC stdc++fs)
     elseif (MSVC)
         # This is to silence the error that MS will remove <experimental/filesystem> and replace

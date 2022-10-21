@@ -2,7 +2,9 @@
 
 #include<iostream>
 
-#include "utility/Filesystem.h"
+//#include "utility/Filesystem.h"
+#include <filesystem>
+namespace fs = std::filesystem;
 
 using namespace std; 
 
@@ -107,6 +109,12 @@ int main()
 
 #endif
   
+  // directory_iterator is know to causes problems on some versions of GCC, so we test it
+  cout << "6. Iterating through current directory:" << endl;
+  for (auto const& dir_entry : fs::directory_iterator(cwd)) 
+  {
+      cout << "   " << dir_entry.path() << '\n';
+  } 
 
   return 0; 
 }
