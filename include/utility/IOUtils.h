@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Exceptions.h"
+#include "Slice.h"
 
 #include <fstream>
 #include <string>
