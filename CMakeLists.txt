@@ -23,33 +23,21 @@ set(SHEFF_THIRD_DEPENDS_target "nlohmann_json::nlohmann_json")
 # External dependencies need to be found from the system (such as MPI)
 # toggle_var indicates the variable name that controls whether the package is included.
 # The entry can be "1" for packages that are always included.
-set(SHEFF_EXTERNAL_DEPENDS_toggle_var "SHEFF_USE_MPI")
+set(SHEFF_EXTERNAL_DEPENDS_toggle_var "SHEFF_USE_MPI;1")
 # The name of the package in the call find_package(<package name>)
-set(SHEFF_EXTERNAL_DEPENDS_package "MPI")
+set(SHEFF_EXTERNAL_DEPENDS_package "MPI;Filesystem")
 # Any components to get from the package (use comma delimited for multiple components in the same package)
-set(SHEFF_EXTERNAL_DEPENDS_components "CXX")
+set(SHEFF_EXTERNAL_DEPENDS_components "CXX;Final")
 # The targets to link from the package (use comma delimited for multiple targets in the same package)
-set(SHEFF_EXTERNAL_DEPENDS_targets "MPI::MPI_CXX")
+set(SHEFF_EXTERNAL_DEPENDS_targets "MPI::MPI_CXX;std::filesystem")
 # Extra compile definitions if the package is included
-set(SHEFF_EXTERNAL_DEPENDS_compile_defs "HAVE_MPI")
+set(SHEFF_EXTERNAL_DEPENDS_compile_defs "HAVE_MPI;HAVE_FILESYSTEM")
 
 macro(SPECIAL_TARGET_COMMANDS)
-  # Use filesystem if available, otherwise use our hack.
-  if( SHEFF_UseFilesystemHack )
-  else()
-    target_compile_definitions(${MAIN_COMPONENT} PUBLIC HAVE_FILESYSTEM )
-    if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
-        #target_link_libraries(${MAIN_COMPONENT} PUBLIC -static-libstdc++fs)
-    elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel" )
-        # Trying the same thing with Intel, linked against newer GCC libs, but no luck
-        message(STATUS "Using stdc++fs !!!!!!!!!!!!!!")
-        target_compile_options(${MAIN_COMPONENT} PUBLIC -std=c++17 )
-        target_link_libraries(${MAIN_COMPONENT} PUBLIC stdc++fs)
-    elseif (MSVC)
-        # This is to silence the error that MS will remove <experimental/filesystem> and replace
-        # it with <filesystem>
-        target_compile_definitions(${MAIN_COMPONENT} PUBLIC _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING)
-    endif()
+  if (MSVC)
+      # This is to silence the error that MS will remove <experimental/filesystem> and replace
+      # it with <filesystem>
+      target_compile_definitions(${MAIN_COMPONENT} PUBLIC _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING)
   endif()
 endmacro()
 
@@ -58,7 +46,6 @@ option( SHEFF_BuildTests        "Build the unit tests." OFF )
 option( SHEFF_BuildPython       "Build Python SWIG module" OFF )
 option( SHEFF_BuildFortran      "Build Fortran SWIG module" OFF )
 option( SHEFF_USE_MPI           "Indicates if the MPI routines should be included in the build." OFF )
-option( SHEFF_UseFilesystemHack "Use if compiler has included <experimental/filesystem>" OFF )
 
 # For debugging, print generator, compiler, and options
 message( STATUS "Gen: ${CMAKE_GENERATOR}, CXX: ${CMAKE_CXX_COMPILER_ID}, Mode: ${CMAKE_BUILD_TYPE}" )
