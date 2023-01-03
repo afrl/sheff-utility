@@ -51,6 +51,5 @@ option( SHEFF_USE_MPI           "Indicates if the MPI routines should be include
 message( STATUS "Gen: ${CMAKE_GENERATOR}, CXX: ${CMAKE_CXX_COMPILER_ID}, Mode: ${CMAKE_BUILD_TYPE}" )
 message( STATUS "Python Bindings: ${SHEFF_BuildPython}, Fortran Bindings: ${SHEFF_BuildPython}" )
 message( STATUS "Tests: ${SHEFF_BuildTests}" )
-message( STATUS "FS HACK: ${SHEFF_UseFilesystemHack}" )
 
 include("$ENV{SHEFF_TOOLS}/cmake/SHEFFModuleMain.cmake")
