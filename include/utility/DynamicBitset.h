@@ -15,8 +15,8 @@ namespace utility
 /// trade off between the block size and the number of blocks.  If you expect the bitset at runtime
 /// to typically have a certain size, consider trying to align the block size with it to minimize
 /// wasted space.  The block size optimally should be a multiple of 8 (up to 64).
-/// @important The maximum size of the bitset is 256 * BLOCK_SIZE.
-/// @important This works well for relatively dense bitsets (greater than 1/8th of the size testing
+/// @attention The maximum size of the bitset is 256 * BLOCK_SIZE.
+/// @attention This works well for relatively dense bitsets (greater than 1/8th of the size testing
 ///            true.  For a more sparse bitset, consider the Roaring library.  And for static
 ///            bitset's consider using std::bitset directly.
 template<uint8_t BLOCK_SIZE>
@@ -77,7 +77,7 @@ class DynamicBitset
     }
 
     /// Returns the size of the dynamic bitset (how many bits can fit in it)
-    /// @important The size is not neccessarily what was given to the constructor or resize.  It is
+    /// @attention The size is not neccessarily what was given to the constructor or resize.  It is
     /// the next largest multiple of BLOCK_SIZE.
     inline SizeType size() const
     {
@@ -129,7 +129,7 @@ class DynamicBitset
 
     /// @brief Returns true if the integer presentation of each blocks is less than the
     ///        corresponding block in the other DynamicBitset.
-    /// @important This may be useful for nothing except map data structures.
+    /// @attention This may be useful for nothing except map data structures.
     inline bool operator<(const DynamicBitset& other) const
     {
         _UTIL_ASSERT(

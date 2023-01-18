@@ -47,5 +47,5 @@
                        >::type;             \
     return const_cast<typename return_type>(std::as_const(*this).method_name(__VA_ARGS__));
 
-/// Used with REUSE_CONST_ACCESSOR for templated methods 
+// Used with REUSE_CONST_ACCESSOR for templated methods 
 #define COMMA ,

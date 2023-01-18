@@ -227,8 +227,8 @@ class path
     /// Get the parent path of the path. Generally, if there is a separator at the end, then
     /// the path without this final separator is returned. Two special cases: C:\ returns C:
     /// and / returns "". A path without separators returns "".
-    /// Thus, for Windows: C:\file -> C:\ -> C: -> ""
-    ///       for Linux:   /home/file/ -> /home/file -> /home -> / -> ""
+    /// Thus, for Windows: C:\filename -> C:\ -> C: -> ""
+    ///       for Linux:   /home/filename/ -> /home/filename -> /home -> / -> ""
     inline path parent_path() const
     {
         std::string parent = _pathname;
