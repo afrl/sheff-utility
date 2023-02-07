@@ -2,9 +2,6 @@ include:
   - project: 'rxcc_computation/sheff/devops/sheff_gitlab_ci'
     ref: main
     file: 'setup_build.yml'
-  - project: 'rxcc_computation/sheff/devops/sheff_gitlab_ci'
-    ref: main
-    file: 'setup_doxygen.yml'
 
 stages:
   - build
