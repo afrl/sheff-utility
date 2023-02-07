@@ -19,6 +19,8 @@ class DynamicArray
   public:
     using value_type = T;
     using size_type  = SizeType;
+    using iterator = T*;
+    using const_iterator = const T*;
 
     DynamicArray();
     DynamicArray(const SizeType num_objects);
