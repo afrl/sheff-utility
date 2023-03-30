@@ -4,10 +4,10 @@
 #include "Range.h"
 
 #include <assert.h>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <vector>
-#include <iostream>
 
 namespace utility
 {
@@ -17,9 +17,9 @@ template<typename T, typename SizeType>
 class DynamicArray
 {
   public:
-    using value_type = T;
-    using size_type  = SizeType;
-    using iterator = T*;
+    using value_type     = T;
+    using size_type      = SizeType;
+    using iterator       = T*;
     using const_iterator = const T*;
 
     DynamicArray();
@@ -88,7 +88,12 @@ class DynamicArray
     void insert_duplicate(const SizeType position_to_insert,
                           const SizeType original_position_to_duplicate);
 
-    const T& operator[](const SizeType i) const;
+    /// Deletes the object at the given position (objects with an index greater than "position" are
+    /// moved one space to the left in memory)
+    void erase(const SizeType position);
+
+      const T&
+      operator[](const SizeType i) const;
     T& operator[](const SizeType i);
     /// Assign operator that takes an iterable lvalue container.
     /// Note: a copy is made for each object in objects.
@@ -372,6 +377,16 @@ inline void DynamicArray<T, SizeType>::insert_duplicate(
     allocator_traits::construct(allocator_,
                                 &objects_[position_to_insert],
                                 objects_[index_to_duplicate]);
+}
+
+template<typename T, typename SizeType>
+inline void DynamicArray<T, SizeType>::erase(const SizeType position)
+{
+    for (SizeType i = position; i < size_ - 1; i++)
+    {
+        allocator_traits::construct(allocator_, &objects_[i], std::move(objects_[i + 1]));
+    }
+    resize_array(size_ - 1);
 }
 
 template<typename T, typename SizeType>
