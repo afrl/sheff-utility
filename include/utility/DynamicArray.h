@@ -91,9 +91,11 @@ class DynamicArray
     /// Deletes the object at the given position (objects with an index greater than "position" are
     /// moved one space to the left in memory)
     void erase(const SizeType position);
+    /// Deletes the first object that matches the given value (objects with an index greater than
+    /// the deleted object are moved one space to the left in memory)
+    void remove_value(const T& value);
 
-      const T&
-      operator[](const SizeType i) const;
+    const T& operator[](const SizeType i) const;
     T& operator[](const SizeType i);
     /// Assign operator that takes an iterable lvalue container.
     /// Note: a copy is made for each object in objects.
@@ -387,6 +389,20 @@ inline void DynamicArray<T, SizeType>::erase(const SizeType position)
         allocator_traits::construct(allocator_, &objects_[i], std::move(objects_[i + 1]));
     }
     resize_array(size_ - 1);
+}
+
+template<typename T, typename SizeType>
+inline void DynamicArray<T, SizeType>::remove_value(const T& value)
+{
+    auto position = 0;
+    for (SizeType i = 0; i < size_; i++)
+    {
+        if (objects_[i] == value)
+        {
+            erase(i);
+            return;
+        }
+    }
 }
 
 template<typename T, typename SizeType>
