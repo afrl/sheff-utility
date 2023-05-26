@@ -69,10 +69,10 @@ template<typename T>
 struct range_iter_base
 {
     using iterator_category = std::input_iterator_tag;
-    using value_type = T;
-    using difference_type = T;
-    using pointer = T*;
-    using reference = T&;
+    using value_type        = T;
+    using difference_type   = T;
+    using pointer           = T*;
+    using reference         = T&;
 
     range_iter_base(T current)
       : current(current)
@@ -365,6 +365,14 @@ template<typename C, typename = typename std::enable_if<traits::has_size<C>::val
 auto indices(C const& cont) -> range_proxy<decltype(cont.size())>
 {
     return { 0, cont.size() };
+}
+
+/// Similar to the signature above, but allows static casting to another type, since this
+/// is a consistent needed in the framework.
+template<typename T, typename C, typename = typename std::enable_if<traits::has_size<C>::value>>
+auto indices_as(C const& cont) -> range_proxy<T>
+{
+    return { T(0), static_cast<T>(cont.size()) };
 }
 
 template<typename T, std::size_t N>

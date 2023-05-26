@@ -5,6 +5,7 @@
 
 #include <assert.h>
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <set>
@@ -24,6 +25,8 @@ struct ProfileStart
     std::string caller;
     std::string description;
     std::chrono::high_resolution_clock::time_point start_time;
+    int64_t start_physical_memory;
+    int64_t start_virtual_memory;
     uint64_t depth;
 };
 
@@ -35,6 +38,10 @@ struct ProfileInterval
     std::string description;
     std::chrono::high_resolution_clock::time_point start_time;
     std::chrono::high_resolution_clock::time_point end_time;
+    int64_t start_physical_memory;
+    int64_t end_physical_memory;
+    int64_t start_virtual_memory;
+    int64_t end_virtual_memory;
     uint64_t depth;
 };
 }
@@ -47,10 +54,16 @@ struct ProfileInterval
 /// Converts time to a pretty (human readable) string
 std::string beautify_duration(std::chrono::milliseconds input_seconds);
 
+/// Converts memory useage to a pretty (human readable) string
+std::string beautify_memory(const uint64_t& mem);
+
 class Profile
 {
   public:
     ~Profile();
+
+    /// @brief Starts writing a log "profile.csv" file
+    static void output_log();
 
     /// @brief Begins a new profiling section
     ///
@@ -100,6 +113,10 @@ class Profile
     int rank_ = 0;
     // The number of spaces to indent each new depth for the messages
     int msg_pad_size_ = 3;
+    // Indicates whether log_file_ should be written to
+    bool write_log_ = false;
+    // Log file that will be updated with every call to end()
+    std::ofstream log_file_;
 
     /// @brief Accesses the singleton instance for this process.
     static Profile& get();

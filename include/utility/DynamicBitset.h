@@ -41,7 +41,7 @@ class DynamicBitset
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Modifiers
 
-    DynamicBitset& operator=(const DynamicBitset&) = default;
+    DynamicBitset& operator=(const DynamicBitset&)     = default;
     DynamicBitset& operator=(DynamicBitset&&) noexcept = default;
 
     /// Resizes to the next largest multiple of BLOCK_SIZE
@@ -81,7 +81,7 @@ class DynamicBitset
     /// the next largest multiple of BLOCK_SIZE.
     inline SizeType size() const
     {
-        return bitset_blocks_.size() * BLOCK_SIZE;
+        return static_cast<SizeType>(bitset_blocks_.size()) * BLOCK_SIZE;
     }
 
     /// Returns the number of true bits in the set

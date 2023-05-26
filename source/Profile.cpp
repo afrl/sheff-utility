@@ -1,7 +1,44 @@
 #include "utility/Profile.h"
 
+#include <fstream>
+
+#ifdef WIN32
+// clang-format off
+#include "windows.h"
+#include "psapi.h"
+// clang-format on
+#endif
+
 namespace utility
 {
+
+#ifdef WIN32
+int64_t query_virtual_memory()
+{
+    _PROCESS_MEMORY_COUNTERS_EX pmc;
+    GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
+    SIZE_T virtual_memory_used = pmc.PrivateUsage;
+    return virtual_memory_used;
+}
+
+int64_t query_physical_memory()
+{
+    _PROCESS_MEMORY_COUNTERS_EX pmc;
+    GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
+    SIZE_T physical_memory_used = pmc.WorkingSetSize;
+    return physical_memory_used;
+}
+#else
+int64_t query_virtual_memory()
+{
+    return 0.0;
+}
+
+int64_t query_physical_memory()
+{
+    return 0.0;
+}
+#endif
 
 std::string beautify_duration(std::chrono::milliseconds input_seconds)
 {
@@ -57,12 +94,39 @@ std::string beautify_duration(std::chrono::milliseconds input_seconds)
     return ss.str();
 }
 
+std::string beautify_memory(const uint64_t& mem)
+{
+    static const std::vector<std::string> byte_mag_names = {
+        "bytes", "KB", "MB", "GB", "TB", "PB"
+    };
+
+    int byte_mag = 0;
+    while (mem / (pow(1028, byte_mag + 1)) > 1 && byte_mag < byte_mag_names.size() - 1)
+    {
+        byte_mag++;
+    }
+
+    double mem_fraction = (double)mem / pow(1028.0, (double)byte_mag);
+    return std::to_string(mem_fraction) + " " + byte_mag_names[byte_mag];
+}
+
 Profile::~Profile()
 {
     if (rank_ == 0 && !is_quiet_ && completed_intervals_.size() > 0)
     {
         print_kernel();
     }
+    if (get().write_log_)
+    {
+        get().log_file_.close();
+    }
+}
+
+void Profile::output_log()
+{
+    get().write_log_ = true;
+    get().log_file_.open("profile.csv");
+    get().log_file_ << "caller,time (ms),delta_physical_ram (bytes),delta_virtual_ram (bytes),total_ram (bytes)" << std::endl;
 }
 
 void Profile::start(const char* caller, const std::string& description)
@@ -71,6 +135,8 @@ void Profile::start(const char* caller, const std::string& description)
                               demangle(caller),
                               description,
                               std::chrono::high_resolution_clock::now(),
+                              query_physical_memory(),
+                              query_virtual_memory(),
                               get().starts_.size() });
 }
 
@@ -96,10 +162,24 @@ std::chrono::milliseconds Profile::end(const char* caller)
                                             popped_data.description,
                                             popped_data.start_time,
                                             end_time,
+                                            popped_data.start_physical_memory,
+                                            query_physical_memory(),
+                                            popped_data.start_virtual_memory,
+                                            query_virtual_memory(),
                                             popped_data.depth });
 
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
       get().completed_intervals_.front().end_time - get().completed_intervals_.front().start_time);
+
+    if (get().write_log_)
+    {
+        auto& interval = get().completed_intervals_.front();
+        get().log_file_
+          << interval.caller + "," + std::to_string(duration.count()) + "," +
+               std::to_string(interval.end_physical_memory - interval.start_physical_memory) + "," +
+               std::to_string(interval.end_virtual_memory - interval.start_virtual_memory) + "," +
+               std::to_string(interval.end_physical_memory + interval.end_virtual_memory) << std::endl;
+    }
 
     return duration;
 }
@@ -127,8 +207,10 @@ void Profile::reset()
     }
 
     get().completed_intervals_.clear();
-    get().counter_ = 0;
-    get().depth_   = 0;
+    get().counter_   = 0;
+    get().depth_     = 0;
+    get().write_log_ = false;
+    get().log_file_.close();
 }
 
 

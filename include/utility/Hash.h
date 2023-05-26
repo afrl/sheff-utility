@@ -91,6 +91,8 @@ std::size_t hash_sorted(const T& x, const T& y)
 template<typename ContainerType>
 std::size_t hash_sorted(const ContainerType& vec)
 {
+    using IndexType = decltype(vec.size());
+
     std::vector<std::size_t> hashes;
     hashes.reserve(vec.size());
     for (auto& obj : vec)
@@ -98,11 +100,11 @@ std::size_t hash_sorted(const ContainerType& vec)
         hashes.push_back(detail::mix((std::size_t)obj));
     }
 
-    std::vector<std::size_t> sorted_indices(hashes.size());
+    std::vector<IndexType> sorted_indices(hashes.size());
     std::iota(sorted_indices.begin(), sorted_indices.end(), 0);
     std::stable_sort(sorted_indices.begin(),
                      sorted_indices.end(),
-                     [&vec](size_t i1, size_t i2) { return vec[i1] < vec[i2]; });
+                     [&vec](auto& i1, auto& i2) { return vec[i1] < vec[i2]; });
 
     std::size_t seed = vec.size();
     for (auto& i : sorted_indices)
