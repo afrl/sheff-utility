@@ -1,7 +1,7 @@
 #include "utility/Profile.h"
 
 #include <fstream>
-
+#include <cmath>
 #ifdef WIN32
 // clang-format off
 #include "windows.h"
@@ -101,12 +101,12 @@ std::string beautify_memory(const uint64_t& mem)
     };
 
     int byte_mag = 0;
-    while (mem / (pow(1028, byte_mag + 1)) > 1 && byte_mag < byte_mag_names.size() - 1)
+    while (mem / (std::pow(1028, byte_mag + 1)) > 1 && byte_mag < byte_mag_names.size() - 1)
     {
         byte_mag++;
     }
 
-    double mem_fraction = (double)mem / pow(1028.0, (double)byte_mag);
+    double mem_fraction = (double)mem / std::pow(1028.0, (double)byte_mag);
     return std::to_string(mem_fraction) + " " + byte_mag_names[byte_mag];
 }
 
