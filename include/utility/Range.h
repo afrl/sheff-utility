@@ -335,11 +335,23 @@ range_proxy<T> range(T end)
 }
 
 /// Similar to the signature above, but allows static casting to another type, since this
-/// is a consistent needed in the framework.
+/// is a consistent need in the framework.
 template<typename T, typename V>
 range_proxy<T> range_as(V end)
 {
     return { T(0), static_cast<T>(end) };
+}
+
+template<typename T, typename V, typename W>
+range_proxy<T> range_as(V begin, W end)
+{
+    return { static_cast<T>(begin), static_cast<T>(end) };
+}
+
+template<typename T, typename V, typename W>
+range_proxy<T>::step_range_proxy reversed_range_as(V begin, W end)
+{
+    return { static_cast<T>(end - 1), static_cast<T>(begin - 1), -1 };
 }
 
 namespace traits
@@ -385,6 +397,72 @@ template<typename T>
 range_proxy<typename std::initializer_list<T>::size_type> indices(std::initializer_list<T>&& cont)
 {
     return { 0, cont.size() };
+}
+
+/// @brief A helper struct for closed_range
+/// @tparam T - Index type
+template<typename T>
+struct IndexPair
+{
+    T i;
+    T j;
+
+
+    IndexPair(T i_a, T j_a, T N_a)
+    {
+        i = i_a;
+        j = j_a;
+        N = N_a;
+    }
+
+    IndexPair& operator++()
+    {
+        ++i;
+        ++j;
+        // Note: i will go to N, which we will leverage to close the iterator
+        if (j == N)
+        {
+            j = 0;
+        }
+        return *this;
+    }
+
+    IndexPair operator++(int)
+    {
+        auto copy = *this;
+        ++*this;
+        return copy;
+    }
+
+    bool operator==(IndexPair const& other) const
+    {
+        return i == other.i && j == other.j;
+    }
+
+    bool operator!=(IndexPair const& other) const
+    {
+        return !(*this == other);
+    }
+
+  private:
+    T N;
+};
+
+/// Provides a range over pairs of { i, i + 1 }, including { N-1, 0 } to close the loop
+template<typename T>
+range_proxy<IndexPair<T>> closed_range(T N)
+{
+    // This is a quirk we are exploiting.  i goes to N and does not loop.  If we didn't use this
+    // then we would need to differientate between the first {0, 1} and the last {0, 1} with a
+    // counter or something.
+    return { { 0, 1, N }, { N, 1, N } };
+}
+
+/// Provides a range over pairs of { i, i + 1 }, ending at { N-2, N-1 }
+template<typename T>
+range_proxy<IndexPair<T>> open_range(T N)
+{
+    return { { 0, 1, N }, { N-1, 0, N } };
 }
 
 } // namespace utility
