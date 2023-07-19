@@ -349,7 +349,7 @@ range_proxy<T> range_as(V begin, W end)
 }
 
 template<typename T, typename V, typename W>
-range_proxy<T>::step_range_proxy reversed_range_as(V begin, W end)
+typename range_proxy<T>::step_range_proxy reversed_range_as(V begin, W end)
 {
     return { static_cast<T>(end - 1), static_cast<T>(begin - 1), -1 };
 }
