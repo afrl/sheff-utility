@@ -121,6 +121,8 @@ struct range_iter_base
 template<typename T>
 struct range_proxy
 {
+    using StepType = intmax_t;
+
     struct iterator : detail::range_iter_base<T>
     {
         iterator(T current)
@@ -133,7 +135,7 @@ struct range_proxy
     {
         struct iter : detail::range_iter_base<T>
         {
-            iter(T current, T step)
+            iter(T current, StepType step)
               : detail::range_iter_base<T>(current)
               , step(step)
             {
@@ -162,14 +164,14 @@ struct range_proxy
 
             bool operator!=(iter const& other) const
             {
-                return not(*this == other);
+                return !(*this == other);
             }
 
           private:
-            T step;
+            StepType step;
         };
 
-        step_range_proxy(T begin, T end, T step)
+        step_range_proxy(T begin, T end, StepType step)
           : begin_(begin, step)
           , end_(end, step)
         {
@@ -196,7 +198,7 @@ struct range_proxy
     {
     }
 
-    step_range_proxy step(T step)
+    step_range_proxy step(StepType step)
     {
         return { *begin_, *end_, step };
     }
@@ -219,6 +221,8 @@ struct range_proxy
 template<typename T>
 struct infinite_range_proxy
 {
+    using StepType = intmax_t;
+
     struct iterator : detail::range_iter_base<T>
     {
         iterator(T current = T())
@@ -241,7 +245,7 @@ struct infinite_range_proxy
     {
         struct iter : detail::range_iter_base<T>
         {
-            iter(T current = T(), T step = T())
+            iter(T current = T(), StepType step = T())
               : detail::range_iter_base<T>(current)
               , step(step)
             {
@@ -273,10 +277,10 @@ struct infinite_range_proxy
             }
 
           private:
-            T step;
+            StepType step;
         };
 
-        step_range_proxy(T begin, T step)
+        step_range_proxy(T begin, StepType step)
           : begin_(begin, step)
         {
         }
@@ -300,7 +304,7 @@ struct infinite_range_proxy
     {
     }
 
-    step_range_proxy step(T step)
+    step_range_proxy step(StepType step)
     {
         return step_range_proxy(*begin_, step);
     }
@@ -462,7 +466,7 @@ range_proxy<IndexPair<T>> closed_range(T N)
 template<typename T>
 range_proxy<IndexPair<T>> open_range(T N)
 {
-    return { { 0, 1, N }, { N-1, 0, N } };
+    return { { 0, 1, N }, { N - 1, 0, N } };
 }
 
 } // namespace utility
