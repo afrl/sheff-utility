@@ -25,10 +25,10 @@ inline void erase_by_indices(std::vector<T>& data, std::vector<IndexType>& indic
     std::sort(indices.begin(), indices.end());
 
     // new we can assume there is at least 1 element to delete. copy blocks at a time.
-    std::vector<T>::iterator curr_block_begin_iter = data.begin();
-    for (std::vector<IndexType>::iterator it = indices.begin(); it != indices.end(); ++it)
+    auto curr_block_begin_iter = data.begin();
+    for (auto it = indices.begin(); it != indices.end(); ++it)
     {
-        std::vector<T>::iterator curr_block_end_iter = data.begin() + *it;
+        auto curr_block_end_iter = data.begin() + *it;
         if (curr_block_begin_iter != curr_block_end_iter)
         {
             std::copy(curr_block_begin_iter, curr_block_end_iter, std::back_inserter(ret));
