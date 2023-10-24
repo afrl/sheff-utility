@@ -42,7 +42,10 @@ namespace utility
 
         // Comparison
         using Parent::operator==;
-        using Parent::operator!=;
+        bool operator!=(const bitset& other)
+        {
+            return !(*this == other);
+        }
 
         // Element access
         inline bool contains(const T& flag) const
