@@ -21,4 +21,4 @@ specialized_opts = [
                            
 ]
 
-make_helper.make(specialized_opts)
+make_helper.make(specialized_opts, root_repo_name='utility')

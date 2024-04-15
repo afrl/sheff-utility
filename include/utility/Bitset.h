@@ -42,7 +42,7 @@ namespace utility
 
         // Comparison
         using Parent::operator==;
-        bool operator!=(const bitset& other)
+        inline bool operator!=(const bitset& other)
         {
             return !(*this == other);
         }
