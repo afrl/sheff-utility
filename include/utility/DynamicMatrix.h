@@ -126,7 +126,7 @@ namespace utility
 		col_size_(arg.col_size_)
 	{
 		assert(arg.row_size_ * arg.col_size_ > 0);
-		std::copy(&arg.objects_[0], &arg.objects_[arg.size_], stdext::checked_array_iterator<T*>(objects_, row_size_ * col_size_));
+		std::copy(&arg.objects_[0], &arg.objects_[arg.row_size_ * arg.col_size_], stdext::checked_array_iterator<T*>(objects_, row_size_ * col_size_));
 	}
 
 	template<typename T, typename RowSizeType, typename ColSizeType>
