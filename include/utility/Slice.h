@@ -191,7 +191,7 @@ Slice<const typename std::underlying_type<T>::type, SizeType> slice_c(const std:
                                                vec.size() };
 }
 
-template<typename T, typename SizeType = std::size_t, int DIM>
+template<typename T, typename SizeType = std::size_t, std::size_t DIM>
 Slice<const T, SizeType> slice_c(const std::array<T, DIM>& arr)
 {
     return Slice<const T, SizeType>(arr.data(), arr.size());
