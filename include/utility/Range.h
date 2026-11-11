@@ -16,6 +16,7 @@
   limitations under the License.
 */
 
+#include <cstdint>
 #include <iterator>
 #include <type_traits>
 
